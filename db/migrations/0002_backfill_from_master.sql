@@ -30,9 +30,9 @@ insert into companies (
 select
   s.domain, s.company_linkedin, s.company_name, s.company_website,
   s.company_industry, s.company_size,
-  nullif(regexp_replace(coalesce(s.company_employee_count, ''), '[^0-9]', '', 'g'), '')::int,
+  safe_int(s.company_employee_count),
   s.company_type, s.company_primary_phone,
-  nullif(regexp_replace(coalesce(s.company_founding_year, ''), '[^0-9]', '', 'g'), '')::int,
+  safe_int(s.company_founding_year),
   s.company_annual_revenue,
   s.company_description, s.company_description_short, s.company_description_source_urls, s.company_description_basis,
   s.parallel_enrichment_status, s.parallel_processor, s.parallel_task_group_id, s.parallel_task_run_id, s.parallel_error, s.parallel_enriched_at,
@@ -66,9 +66,9 @@ insert into companies (
 )
 select
   s.domain, s.company_name, s.company_website, s.company_industry, s.company_size,
-  nullif(regexp_replace(coalesce(s.company_employee_count, ''), '[^0-9]', '', 'g'), '')::int,
+  safe_int(s.company_employee_count),
   s.company_type, s.company_primary_phone,
-  nullif(regexp_replace(coalesce(s.company_founding_year, ''), '[^0-9]', '', 'g'), '')::int,
+  safe_int(s.company_founding_year),
   s.company_annual_revenue,
   s.niche, s.subniche, s.tags,
   'derived_from_contact', coalesce(s.created_at, now()), now()

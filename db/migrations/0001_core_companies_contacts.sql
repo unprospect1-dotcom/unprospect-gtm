@@ -9,8 +9,11 @@
 
 begin;
 
--- gen_random_uuid() lives in pgcrypto (preinstalled on Supabase).
+-- gen_random_uuid() lives in pgcrypto; pg_trgm powers the name trigram index.
+-- Both extensions must be created up front, before any table or index below
+-- references them (the gin_trgm_ops operator class comes from pg_trgm).
 create extension if not exists pgcrypto;
+create extension if not exists pg_trgm;
 
 -- -----------------------------------------------------------------------------
 -- Helpers
@@ -30,6 +33,20 @@ returns text language sql immutable as $$
       '/', 1
     ),
   '');
+$$;
+
+-- Parse a possibly-dirty text number into int4, returning NULL when empty or
+-- out of int4 range (some staging rows carry garbage like 14-digit strings in
+-- company_employee_count). Prevents 22003 overflow during backfill.
+create or replace function safe_int(t text)
+returns integer language sql immutable as $$
+  select case
+    when nullif(regexp_replace(coalesce(t, ''), '[^0-9]', '', 'g'), '') is null then null
+    when nullif(regexp_replace(coalesce(t, ''), '[^0-9]', '', 'g'), '')::numeric
+         between -2147483648 and 2147483647
+      then nullif(regexp_replace(coalesce(t, ''), '[^0-9]', '', 'g'), '')::int
+    else null
+  end;
 $$;
 
 -- Generic updated_at touch trigger.
@@ -201,9 +218,6 @@ create index if not exists contacts_dnc_idx             on contacts (do_not_cont
 drop trigger if exists trg_contacts_updated_at on contacts;
 create trigger trg_contacts_updated_at before update on contacts
   for each row execute function set_updated_at();
-
--- trigram index above needs pg_trgm
-create extension if not exists pg_trgm;
 
 -- -----------------------------------------------------------------------------
 -- Convenience view: contacts flattened with their company firmographics.

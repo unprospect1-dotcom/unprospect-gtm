@@ -12,6 +12,7 @@ drop table if exists companies;
 
 drop function if exists set_updated_at();
 drop function if exists norm_domain(text);
+drop function if exists is_generic_domain(text);
 drop function if exists safe_int(text);
 
 commit;

@@ -19,20 +19,43 @@ create extension if not exists pg_trgm;
 -- Helpers
 -- -----------------------------------------------------------------------------
 
--- Canonicalize a domain: lowercase, strip scheme, strip leading "www.",
--- drop any path. Returns NULL for empty input. Used both here and at write time
--- so company identity stays consistent.
+-- A "generic" domain belongs to a platform anyone can have a presence on
+-- (social networks, site builders, messaging, marketplaces, free email).
+-- These do NOT identify a company, so norm_domain() maps them to NULL — which
+-- keeps the backfill from minting pseudo-companies like "facebook.com".
+create or replace function is_generic_domain(d text)
+returns boolean language sql immutable as $$
+  select lower(coalesce(d, '')) in (
+    'facebook.com','m.facebook.com','fb.com','instagram.com','linkedin.com',
+    'twitter.com','x.com','youtube.com','tiktok.com',
+    'wa.me','whatsapp.com','api.whatsapp.com','t.me','telegram.me',
+    'wixsite.com','wix.com','wordpress.com','blogspot.com','blogger.com',
+    'sites.google.com','google.com','godaddysites.com','mercadolibre.com.mx',
+    'gmail.com','googlemail.com','hotmail.com','outlook.com','live.com','msn.com',
+    'yahoo.com','yahoo.com.mx','icloud.com','me.com','aol.com','protonmail.com','prodigy.net.mx'
+  )
+  or lower(coalesce(d, '')) like '%.wixsite.com'
+  or lower(coalesce(d, '')) like '%.blogspot.com'
+  or lower(coalesce(d, '')) like '%.wordpress.com';
+$$;
+
+-- Canonicalize a domain: lowercase, strip scheme, strip leading "www.", drop
+-- any path. Returns NULL for empty input OR for generic (non-identifying)
+-- domains. Used both here and at write time so company identity stays consistent.
 create or replace function norm_domain(d text)
 returns text language sql immutable as $$
-  select nullif(
-    split_part(
-      regexp_replace(
-        regexp_replace(lower(trim(coalesce(d, ''))), '^https?://', ''),
-        '^www\.', ''
+  select case when is_generic_domain(x) then null else x end
+  from (
+    select nullif(
+      split_part(
+        regexp_replace(
+          regexp_replace(lower(trim(coalesce(d, ''))), '^https?://', ''),
+          '^www\.', ''
+        ),
+        '/', 1
       ),
-      '/', 1
-    ),
-  '');
+    '') as x
+  ) s;
 $$;
 
 -- Parse a possibly-dirty text number into int4, returning NULL when empty or

@@ -130,9 +130,13 @@ def flush(rows):
         "from (values " + ",".join(vals) +
         ") as v(id,niche,subniche,desc_short,cat_json,status,run_id,needs_review) "
         "where c.id=v.id;")
-    code, resp = sql(query)
-    if code not in ("200", "201"):
-        print("  FLUSH ERROR", code, str(resp)[:300], flush=True)
+    code, resp = None, None
+    for i in range(5):
+        code, resp = sql(query)
+        if code in ("200", "201"):
+            return
+        time.sleep(2 * (i + 1))  # transient 502/000 from the SQL API -> retry
+    print("  FLUSH ERROR (gave up)", code, str(resp)[:200], flush=True)
 
 def write_progress(d):
     try: open(PROGRESS, "w").write(json.dumps(d))

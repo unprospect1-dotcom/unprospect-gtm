@@ -5,7 +5,10 @@ Trae de la API v2 de Instantly los envíos y replies y los refleja en
 consulten una sola fuente de verdad.
 
 Requiere en el entorno:
-  INSTANTLY_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+  INSTANTLY_KEY (o INSTANTLY_API_KEY), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+OJO: la API v2 de Instantly requiere plan con acceso API (Hypergrowth);
+con plan menor responde 402 "Workspace does not have an active paid plan".
 
 Uso:
   python scripts/instantly_sync.py --workspace unprospect [--campaign <instantly_campaign_id>]
@@ -29,7 +32,7 @@ def instantly_get(path, params=None):
     if params:
         url += "?" + urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
     req = urllib.request.Request(url, headers={
-        "Authorization": "Bearer " + os.environ["INSTANTLY_API_KEY"],
+        "Authorization": "Bearer " + (os.environ.get("INSTANTLY_KEY") or os.environ["INSTANTLY_API_KEY"]),
         "Accept": "application/json",
     })
     with urllib.request.urlopen(req, timeout=120) as r:

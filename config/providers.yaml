@@ -41,6 +41,26 @@ prospeo:
     # Costo: 1 crédito por email verificado encontrado; NO_MATCH no cobra;
     # re-enriquecer el mismo lead es gratis por 90 días.
 
+ocean:
+  env_key: OCEAN_KEY              # nombre de la env var con el API key (header x-api-token)
+  base_url: https://api.ocean.io  # search vive en /v3, reveal/warmup/enrich/credits en /v2
+  rate_limit_rpm: 60              # límite self-serve: 60 req/min y 1,000 req/día
+  daily_request_limit: 1000
+  credit_budget:
+    max_per_run: 800              # tope duro de créditos por corrida — el skill NUNCA lo excede sin aprobación
+    reserve: 500                  # nunca dejar el saldo debajo de esto
+    # Economía: 1 crédito por resultado de búsqueda devuelto + 1 crédito por
+    # email verificado revelado. Lista de 300 con emails ≈ hasta 600 créditos.
+  lookalike:
+    max_domains: 10               # seeds por búsqueda lookalike
+    mode: precise                 # precise = similitud semántica de producto/servicio; broad = misma industria
+    warmup_seeds: true            # validar seeds con /v2/warmup/companies (GRATIS) antes de buscar
+  search:
+    count_probe_size: 1           # size:1 primero para ver el total (cuesta 1 crédito) antes de decidir
+    page_size: 50                 # por página vía cursor searchAfter
+  reveal:
+    batch: true                   # reveal por lote de person ids; async, 1 crédito por email verificado
+
 # Columnas estándar del CSV de salida — el contrato con gtm-check-contact,
 # gtm-personalize y el upload a Instantly. Todo proveedor mapea a esto.
 csv_schema:

@@ -37,7 +37,7 @@ Los filtros del proveedor cortan por atributos; no saben si la empresa encaja en
 - **`icp-fit`** — score de encaje por empresa (`qualified`, `confidence`, `reason`). Quedarse con `qualified: true` y `confidence ≥ 0.6`.
 - **`title-buyer`** — con títulos dispersos: normaliza el rol y clasifica `decisor | influencer | descartar` según el buyer map (en <50 empleados el decisor suele ser el dueño aunque el título diga otra cosa).
 
-Primera vez por segmento: correr el tuner (10 filas, dos rondas limpias). Corridas siguientes: reutilizar el prompt de `workspaces/<ws>/prompts/` — sub-agents si son ≤500 filas, `scripts/run_prompt.py` con el modelo barato si son miles.
+Primera vez por segmento: correr el tuner (10 filas, dos rondas limpias). Corridas siguientes: reutilizar el prompt de `workspaces/<ws>/prompts/` con fan-out de sub-agents de modelo barato (config `execution` de `providers.yaml`).
 
 ## 4. Control de calidad (gate antes de aprobar)
 

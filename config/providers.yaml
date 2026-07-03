@@ -61,6 +61,17 @@ ocean:
   reveal:
     batch: true                   # reveal por lote de person ids; async, 1 crédito por email verificado
 
+# Patrón tuner/worker (gtm-prompt-tuner): el modelo frontier (Claude Code)
+# AFINA el prompt; el modelo barato lo EJECUTA a escala (~90% menos costo).
+models:
+  subagent_max_rows: 500          # hasta aquí se ejecuta con sub-agents de Claude Code (sin API externa, incluido en el plan)
+  worker:
+    env_key: WORKER_MODEL_KEY     # API key del host del modelo barato
+    base_url: https://openrouter.ai/api/v1   # cualquier endpoint OpenAI-compatible (OpenRouter, Groq, Together)
+    model: google/gemma-3-27b-it  # el worker; si degrada calidad vs el frontier, se sube AQUÍ, no se toca el prompt
+    rate_limit_rps: 2
+    batch_size: 10                # filas por request — 10 mantiene la calidad
+
 # Columnas estándar del CSV de salida — el contrato con gtm-check-contact,
 # gtm-personalize y el upload a Instantly. Todo proveedor mapea a esto.
 csv_schema:

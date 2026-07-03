@@ -17,12 +17,14 @@ Todo el sistema es este flujo. Cada etapa agrupa sus skills:
 - `/gtm-prospeo` — Prospeo: buscar (hasta 25K con crawl por estado) o enriquecer un CSV
 - `/gtm-ocean` — Ocean.io: lookalikes semánticos desde 3–10 dominios seed (créditos duros)
 - `/gtm-check-contact` — dedupe contra Supabase. **SIEMPRE antes de exportar o contactar.**
+- `/gtm-prompt-tuner` — el frontier afina un prompt (ICP fit, relevancia de títulos, snippets) en muestras de 10 hasta dos rondas limpias; el prompt es el activo (`workspaces/<ws>/prompts/`) y lo ejecuta un modelo barato a escala
 
 ### 3. Copywriting — qué decir
 - `/gtm-offer-ideation` — front-end offers por segmento → `OFFERS.md`
 - `/gtm-campaign-ideation` — ángulos (segmento × dolor × offer) → `ANGLES.md` + `BRIEF.md`
 - `/gtm-experiments` (modo diseñar) — matriz del A/B de dolor antes de escribir
 - `/gtm-copy` — copy por framework, variantes A/B por hipótesis de dolor → `COPY.md`
+- Snippets AI de personalización: **solo cuando el playbook (BRIEF) los pide** — relevancia > personalización; se afinan con `/gtm-prompt-tuner`, no se escriben a mano
 
 ### 4. Campaign launch — enviar y registrar
 - Pendiente `/gtm-launch`. Hoy: CSV + copy a Instantly a mano, y registrar **todo** envío

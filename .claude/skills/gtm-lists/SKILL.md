@@ -6,9 +6,9 @@ argument-hint: <workspace> <segmento | descripción de la lista | dominios seed>
 
 # GTM Lists — router de list building
 
-Una lista pasa SIEMPRE por 4 pasos, sin importar el proveedor:
-**fuente → dedupe → control de calidad → artefacto aprobado en `lists/<ws>/`**.
-Este skill decide la fuente y garantiza los otros tres.
+Una lista pasa SIEMPRE por 5 pasos, sin importar el proveedor:
+**fuente → dedupe → calificación AI → control de calidad → artefacto aprobado en `lists/<ws>/`**.
+Este skill decide la fuente y garantiza los demás.
 
 ## 1. Elegir la fuente
 
@@ -21,12 +21,25 @@ Este skill decide la fuente y garantiza los otros tres.
 
 **Waterfall:** los leads sin match de un proveedor pasan al siguiente (ej. enriquecer con Prospeo lo que AI Ark devolvió sin email verificado) — nunca se descartan sin intentar la segunda fuente.
 
+**Departamentos y seniority (a quién dentro de la empresa):**
+- **AI Ark filtra nativo** por `contact.departmentAndFunction` (ventas, marketing, ops...) × `contact.seniority` (founder, c_suite, vp, director, manager) — úsalo como primer corte cuando el buyer map pide un departamento; es el proveedor con mejor accuracy para esto.
+- **Prospeo NO tiene filtro de departamento** — solo `person_job_title` include/exclude. Aproxima el departamento con listas de títulos y deja el veredicto fino al paso 3.
+- El título nunca es confiable solo (dispersión: "Gerente de Tráfico" = ops en logística MX): el corte de filtros acerca, el prompt `title-buyer` decide.
+
 ## 2. Dedupe (no negociable)
 
 Antes de cualquier export grande, corre `/gtm-check-contact` sobre la muestra/dominios:
 los ya contactados van a la lista de exclusión del proveedor. No pagues por leads que vas a tirar.
 
-## 3. Control de calidad (gate antes de aprobar)
+## 3. Calificación AI (cuando el corte de filtros no basta)
+
+Los filtros del proveedor cortan por atributos; no saben si la empresa encaja en el ICP ni si el contacto es EL decisor. Para eso, prompts afinados con `/gtm-prompt-tuner`:
+- **`icp-fit`** — score de encaje por empresa (`qualified`, `confidence`, `reason`). Quedarse con `qualified: true` y `confidence ≥ 0.6`.
+- **`title-buyer`** — con títulos dispersos: normaliza el rol y clasifica `decisor | influencer | descartar` según el buyer map (en <50 empleados el decisor suele ser el dueño aunque el título diga otra cosa).
+
+Primera vez por segmento: correr el tuner (10 filas, dos rondas limpias). Corridas siguientes: reutilizar el prompt de `workspaces/<ws>/prompts/` — sub-agents si son ≤500 filas, `scripts/run_prompt.py` con el modelo barato si son miles.
+
+## 4. Control de calidad (gate antes de aprobar)
 
 Sobre la muestra y el CSV final:
 - **Duplicados internos** (por email Y por dominio) = 0.
@@ -36,7 +49,7 @@ Sobre la muestra y el CSV final:
 
 Una lista mala quema inboxes aunque el copy sea perfecto: si falla el gate, se ajusta el filtro; nunca se lanza "así".
 
-## 4. Artefacto
+## 5. Artefacto
 
 Igual para los 3 proveedores (lo escriben ellos, este skill lo verifica):
 CSV normalizado al `csv_schema` de `config/providers.yaml` en `lists/<ws>/<YYYY-MM-DD>-<slug>.csv`

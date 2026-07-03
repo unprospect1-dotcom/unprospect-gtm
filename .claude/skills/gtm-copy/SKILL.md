@@ -25,6 +25,7 @@ Escribe cada secuencia en 2–3 frameworks distintos y compáralos antes de eleg
 
 ## Reglas de copy (no negociables)
 - El email 1 debe demostrar en la primera línea que vimos algo específico de SU empresa (el campo de personalización por lead).
+- **Relevancia > personalización.** Un segmento bien cortado hace que el mensaje casi se escriba solo ("en equipos de 10+ SDRs..."). Los snippets AI (industria específica del lead, caso de éxito del mismo vertical) se usan solo cuando el BRIEF/playbook los pide — y sus prompts se afinan con `/gtm-prompt-tuner`, nunca personalización genérica por personalizar.
 - Menos de 90 palabras por email; una sola idea; un solo CTA de fricción baja (el front-end offer, no "una llamada de 30 min").
 - Cero palabras de spam obvias; escribir como se habla — aplicar el test de la cena.
 - El idioma y vocabulario salen del `PROFILE.md` del workspace, no del default.

@@ -6,7 +6,7 @@
 
 ## Reglas (confirmadas, aplicar siempre)
 
-_(vacío — se promueven aquí los aprendizajes confirmados en ≥2 campañas)_
+- [2026-07-03] (confirmado — regla declarada por el usuario) **Relevancia > personalización.** En Unprospect preferimos mil veces la relevancia del segmento ("en equipos de 10+ SDRs...") sobre personalización pesada: el mensaje casi se escribe solo. Personalización ligera (industria específica en el copy, caso de éxito del vertical) SÍ puede hacer la diferencia — pero solo cuando el playbook la pide, vía snippet afinado con /gtm-prompt-tuner.
 
 ## Entradas
 

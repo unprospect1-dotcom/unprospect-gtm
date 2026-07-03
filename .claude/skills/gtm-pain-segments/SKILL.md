@@ -6,10 +6,8 @@ argument-hint: <workspace> [vertical o lista de empresas]
 
 # GTM Pain Segments — segmentación por dolor observable
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio.
-2. Lee `workspaces/<ws>/PROFILE.md` (hipótesis de dolor del onboarding) y `SEGMENTS.md` (segmentos ya definidos — no dupliques).
-3. Lee `workspaces/<ws>/LEARNINGS.md`: qué segmentos ya probaron y cómo les fue.
+## Antes de empezar
+Además del contrato de memoria: lee `workspaces/<ws>/SEGMENTS.md` — segmentos ya definidos, no dupliques ni re-propongas descartados.
 
 ## Concepto clave
 Un **dolor probable observable** es un atributo visible HOY desde fuera que implica un dolor con alta probabilidad:
@@ -35,5 +33,5 @@ Score 1–5 en: tamaño del segmento × intensidad del dolor × facilidad de ver
 - Escribe/actualiza `workspaces/<ws>/SEGMENTS.md` con la matriz, fecha y estado (`propuesto` / `verificando` / `activo` / `descartado`).
 - Para segmentos verificables con la base actual: actualiza `companies.pain_signals` (jsonb) y `companies.pain_segment` vía la API de Supabase, o genera el script de clasificación (patrón de `segment_companies.py`).
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill: qué fuentes de verificación funcionaron, qué segmentos se descartaron y por qué (transferible entre clientes).
+## Al terminar
+- A `LEARNINGS.md` de este skill: qué fuentes de verificación funcionaron, qué segmentos se descartaron y por qué.

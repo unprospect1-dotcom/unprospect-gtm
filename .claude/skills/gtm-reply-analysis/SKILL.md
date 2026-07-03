@@ -6,10 +6,10 @@ argument-hint: <workspace> [campaña | "todas"]
 
 # GTM Reply Analysis — aprender de las respuestas
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio.
-2. Lee del workspace: `ANGLES.md` (para ligar reply → ángulo) y `LEARNINGS.md`.
-3. Fuente de replies: API de Instantly (`INSTANTLY_API_KEY`) vía `scripts/instantly_sync.py`, o la tabla `replies` de Supabase si ya se sincronizó. Fallback: CSV exportado que te pase el usuario.
+## Antes de empezar
+Además del contrato de memoria:
+1. Lee `workspaces/<ws>/ANGLES.md` (para ligar reply → ángulo).
+2. Fuente de replies: API de Instantly (`INSTANTLY_API_KEY`) vía `scripts/instantly_sync.py`, o la tabla `replies` de Supabase si ya se sincronizó. Fallback: CSV exportado que te pase el usuario.
 
 ## Pasos
 
@@ -37,6 +37,3 @@ Agrupa objeciones recurrentes. Cada objeción repetida ≥3 veces = o un fix de 
 ### 4. Reporte y persistencia
 - Resumen: replies por clase y por ángulo, positive rate por hipótesis de dolor, top 5 frases textuales del mercado, objeciones recurrentes, recomendación concreta (seguir / ajustar copy / cambiar ángulo / re-segmentar).
 - Actualiza `workspaces/<ws>/LEARNINGS.md` (sección de voz del mercado y ángulos) y el `RESULTS.md` de la campaña.
-
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill mejoras al método de clasificación y patrones transferibles entre clientes.

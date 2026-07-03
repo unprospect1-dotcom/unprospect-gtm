@@ -3,3 +3,9 @@ __pycache__/
 .pytest_cache/
 lists/**/*.csv
 lists/**/*.jsonl
+
+# outputs generados por los clasificadores locales — no se versionan
+segment_results.json
+segment_results.csv
+subagent_results.json
+review_queue_*.json

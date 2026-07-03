@@ -6,9 +6,8 @@ argument-hint: <workspace> <campaña|"evaluar" campaña>
 
 # GTM Experiments — A/B testing de dolor probable
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio (errores de diseño pasados, umbrales que funcionaron).
-2. Lee del workspace: `SEGMENTS.md`, `ANGLES.md`, `LEARNINGS.md` y el `BRIEF.md` de la campaña.
+## Antes de empezar
+Además del contrato de memoria: lee del workspace `SEGMENTS.md`, `ANGLES.md` y el `BRIEF.md` de la campaña.
 
 ## Principio
 **Se testea la hipótesis de dolor, no cosméticos.** Subject lines, CTAs y largo se fijan iguales entre variantes. Lo único que cambia entre A y B es QUÉ dolor ataca el copy. Ganar un test = aprender qué le duele al segmento, no qué palabra abre más emails.
@@ -33,5 +32,5 @@ Escribe en el BRIEF antes de lanzar: "ganamos con A si su positive reply rate su
 3. Escribe `campaigns/<campaña>/RESULTS.md` con números crudos, decisión y qué se aprendió del dolor.
 4. Actualiza `ANGLES.md` (ángulo ganador → `ganador`, perdedor → estado que corresponda) y dispara `/gtm-retro`.
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill: fallas de diseño detectadas (variables contaminadas, muestras cortas) y umbrales que dieron señal limpia.
+## Al terminar
+- A `LEARNINGS.md` de este skill: fallas de diseño detectadas (variables contaminadas, muestras cortas) y umbrales que dieron señal limpia.

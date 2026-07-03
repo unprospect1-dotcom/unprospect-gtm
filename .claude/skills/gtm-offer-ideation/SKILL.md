@@ -6,10 +6,8 @@ argument-hint: <workspace> [segmento]
 
 # GTM Offer Ideation — front-end offers / lead magnets
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio (qué tipos de offer han funcionado antes, en cualquier cliente).
-2. Lee `workspaces/<ws>/PROFILE.md`, `SEGMENTS.md` y `OFFERS.md` (no re-idees lo que ya existe).
-3. Lee `workspaces/<ws>/LEARNINGS.md` para saber qué offers ya se probaron y su resultado.
+## Antes de empezar
+Además del contrato de memoria: lee `workspaces/<ws>/SEGMENTS.md` y `OFFERS.md` — no re-idees lo que ya existe ni lo que ya se probó.
 
 ## Concepto clave
 Un front-end offer NO es la oferta principal con descuento. Es un entregable de valor inmediato, específico al **dolor del segmento**, que:
@@ -38,5 +36,5 @@ Para cada segmento activo de `SEGMENTS.md`, genera 3–5 offers usando estas fam
 ### 3. Persistir
 Actualiza `workspaces/<ws>/OFFERS.md`: offer, segmento, familia, score, costo de producción, estado (`idea` / `en producción` / `activo` / `retirado`) y — cuando exista — su tasa de aceptación real por campaña.
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill los patrones transferibles (ej. "en logística, benchmark > playbook porque nadie comparte datos del sector").
+## Al terminar
+- A `LEARNINGS.md` de este skill: qué familias de offer ganan por vertical (ej. "en logística, benchmark > playbook porque nadie comparte datos del sector").

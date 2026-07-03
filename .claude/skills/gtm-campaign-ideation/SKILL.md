@@ -6,10 +6,10 @@ argument-hint: <workspace> [segmento]
 
 # GTM Campaign Ideation — ángulos de campaña
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio.
-2. Lee del workspace: `PROFILE.md`, `SEGMENTS.md`, `OFFERS.md`, `ANGLES.md` y `LEARNINGS.md`. **`ANGLES.md` es crítico: no propongas ángulos ya quemados ni repitas contra el mismo segmento.**
-3. Consulta la tabla `angles` de Supabase (filtrada por `workspace`) para ver métricas reales de ángulos pasados.
+## Antes de empezar
+Además del contrato de memoria:
+1. Lee del workspace: `SEGMENTS.md`, `OFFERS.md` y `ANGLES.md`. **`ANGLES.md` es crítico: no propongas ángulos ya quemados ni repitas contra el mismo segmento.**
+2. Consulta la tabla `angles` de Supabase (filtrada por `workspace`) para ver métricas reales de ángulos pasados.
 
 ## Concepto clave
 Un **ángulo** = (segmento, hipótesis de dolor, offer, mecanismo de credibilidad). El mismo segmento puede recibir campañas con ángulos distintos a lo largo del tiempo — por eso `outreach_log` registra el ángulo de cada envío: para recontactar con uno nuevo, nunca con el mismo.
@@ -32,6 +32,3 @@ Recomienda 1–2 ángulos para lanzar y — si hay hipótesis de dolor en empate
 - Actualiza `workspaces/<ws>/ANGLES.md`: ángulo, fecha, estado (`propuesto` / `activo` / `ganador` / `quemado`), campañas donde se usó.
 - Inserta el/los ángulos elegidos en la tabla `angles` de Supabase.
 - Crea `workspaces/<ws>/campaigns/<YYYY-MM-slug>/BRIEF.md` con: segmento, ángulo, offer, lista estimada, hipótesis y criterio de éxito.
-
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill los patrones de ideación transferibles entre clientes.

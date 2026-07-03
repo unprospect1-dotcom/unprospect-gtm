@@ -1,15 +1,15 @@
 ---
 name: gtm-copy
-description: Escribe cold email copy usando frameworks distintos (PAS, BAB, PPP, QVC, 1-2-3, observación directa) a partir de un BRIEF de campaña. Genera las variantes A/B donde la variable es la hipótesis de dolor, no cosméticos. Complementa a /unprospect-messages.
+description: Escribe cold email copy usando frameworks distintos (PAS, BAB, PPP, QVC, 1-2-3, observación directa) a partir de un BRIEF de campaña. Genera las variantes A/B donde la variable es la hipótesis de dolor, no cosméticos.
 argument-hint: <workspace> <campaña>
 ---
 
 # GTM Copy — copywriting por frameworks
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio: qué frameworks han ganado por vertical.
-2. Lee del workspace: `PROFILE.md` (tono y vocabulario del mercado), `LEARNINGS.md`, y el `BRIEF.md` de la campaña en `campaigns/`.
-3. Si la campaña viene de un experimento, lee su diseño en el BRIEF: las variantes DEBEN respetar la matriz del experimento.
+## Antes de empezar
+Además del contrato de memoria:
+1. Lee el `BRIEF.md` de la campaña en `workspaces/<ws>/campaigns/` — sin BRIEF aprobado no hay copy.
+2. Si la campaña viene de un experimento, lee su diseño en el BRIEF: las variantes DEBEN respetar la matriz del experimento.
 
 ## Frameworks disponibles
 Escribe cada secuencia en 2–3 frameworks distintos y compáralos antes de elegir:
@@ -24,7 +24,7 @@ Escribe cada secuencia en 2–3 frameworks distintos y compáralos antes de eleg
 | **1-2-3** | "3 cosas que noté de tu X" | Auditorías/diagnósticos como offer |
 
 ## Reglas de copy (no negociables)
-- El email 1 debe demostrar en la primera línea que vimos algo específico de SU empresa (ahí entra `/unprospect-research`).
+- El email 1 debe demostrar en la primera línea que vimos algo específico de SU empresa (el campo de personalización por lead).
 - Menos de 90 palabras por email; una sola idea; un solo CTA de fricción baja (el front-end offer, no "una llamada de 30 min").
 - Cero palabras de spam obvias; escribir como se habla — aplicar el test de la cena.
 - El idioma y vocabulario salen del `PROFILE.md` del workspace, no del default.
@@ -33,7 +33,7 @@ Escribe cada secuencia en 2–3 frameworks distintos y compáralos antes de eleg
 La variable del test es **la hipótesis de dolor** (definida en el BRIEF/experimento). Las variantes mantienen constante: framework, largo, CTA, offer. Si quieres testear framework, es OTRO experimento — nunca dos variables a la vez.
 
 ## Salida
-Escribe `campaigns/<campaña>/COPY.md`: secuencia completa por variante (3–4 steps), framework usado, hipótesis de dolor de cada variante, y los campos de personalización esperados de `/unprospect-research`. Formato listo para subir a Instantly (con spintax si aplica).
+Escribe `campaigns/<campaña>/COPY.md`: secuencia completa por variante (3–4 steps), framework usado, hipótesis de dolor de cada variante, y los campos de personalización que la lista debe traer. Formato listo para subir a Instantly (con spintax si aplica).
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill: qué framework se eligió y por qué. Cuando `/gtm-retro` traiga resultados, aquí se registra qué framework ganó por segmento/vertical.
+## Al terminar
+- A `LEARNINGS.md` de este skill: qué framework se eligió y por qué. Cuando `/gtm-retro` traiga resultados, aquí se registra qué framework ganó por segmento/vertical.

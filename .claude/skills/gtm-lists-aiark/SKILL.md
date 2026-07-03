@@ -6,9 +6,10 @@ argument-hint: <workspace> [segmento | "lookalikes de X, Y" | descripción de la
 
 # GTM Lists — AI Ark
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio y `config/providers.yaml` (sección `aiark` + `defaults` + `csv_schema`). **Toda la configuración sale de ahí — nunca hardcodees valores.**
-2. Lee del workspace: `BUYER-MAP.md` si existe (títulos/seniority por persona), `SEGMENTS.md` (filtros del segmento), `PROFILE.md` (geografía/idioma del ICP).
+## Antes de empezar
+Además del contrato de memoria:
+1. Lee `config/providers.yaml` (sección `aiark` + `defaults` + `csv_schema`). **Toda la configuración sale de ahí — nunca hardcodees valores.**
+2. Lee del workspace: `BUYER-MAP.md` si existe (títulos/seniority por persona) y `SEGMENTS.md` (filtros del segmento).
 3. Verifica que la env var indicada en `aiark.env_key` exista. Si no, detente y dilo — no simules.
 
 ## Referencia técnica de la API
@@ -41,5 +42,5 @@ Reporta créditos disponibles + tamaño del job y **confirma una última vez**. 
 ### 6. Artefacto
 Normaliza al `csv_schema` de la config (source=`aiark`) y escribe `lists/<workspace>/<YYYY-MM-DD>-<slug>.csv` + `-REPORT.md` con: filtros finales (JSON reproducible), totales, % verificados, excluidos por dedupe, créditos gastados, y estado **aprobado**. Este CSV es lo que consumen `gtm-check-contact`/`gtm-personalize`/launch.
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md`: qué filtros/modos dieron señal limpia, correcciones del usuario textuales (ej. "en logística MX el título real es 'Gerente de Tráfico', no 'Operations Manager'"), y sorpresas de la API.
+## Al terminar
+- A `LEARNINGS.md` de este skill: qué filtros/modos dieron señal limpia, correcciones del usuario textuales (ej. "en logística MX el título real es 'Gerente de Tráfico', no 'Operations Manager'"), y sorpresas de la API.

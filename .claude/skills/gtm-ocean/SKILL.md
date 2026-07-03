@@ -6,9 +6,10 @@ argument-hint: <workspace> <dominios seed separados por coma | descripción>
 
 # GTM Ocean — lookalikes con presupuesto
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio y `config/providers.yaml` (sección `ocean` + `defaults` + `csv_schema`). **Nada hardcodeado.**
-2. Lee del workspace: `BUYER-MAP.md` (títulos/seniority), `SEGMENTS.md`, `PROFILE.md` si existen.
+## Antes de empezar
+Además del contrato de memoria:
+1. Lee `config/providers.yaml` (sección `ocean` + `defaults` + `csv_schema`). **Nada hardcodeado.**
+2. Lee del workspace: `BUYER-MAP.md` (títulos/seniority) y `SEGMENTS.md` si existen.
 3. Verifica que la env var de `ocean.env_key` exista; si no, detente y dilo.
 4. **Consulta el saldo (`balance`) SIEMPRE al arrancar.** Reporta: saldo, `dailyLimitRateLeft`, y cuánto permite gastar esta corrida según `credit_budget` (max_per_run, sin bajar de reserve).
 
@@ -53,5 +54,5 @@ Pagina con `searchAfter` hasta el N aprobado. Junta los person ids y corre `reve
 ### 7. Artefacto
 Normaliza al `csv_schema` (source=`ocean`, source_id=person id) → `lists/<workspace>/<YYYY-MM-DD>-<slug>.csv` + `-REPORT.md`: seeds usados, modo, filtros JSON reproducibles, totales, créditos gastados vs estimados, saldo final, estado **aprobado**. Los seeds y el resultado también van a `SEGMENTS.md` si definieron un segmento nuevo.
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md`: qué seeds produjeron lookalikes limpios vs ruidosos, precise vs broad por caso, nombres de campos del body corregidos en corridas reales, y costos reales vs estimados.
+## Al terminar
+- A `LEARNINGS.md` de este skill: qué seeds produjeron lookalikes limpios vs ruidosos, precise vs broad por caso, nombres de campos del body corregidos en corridas reales, y costos reales vs estimados.

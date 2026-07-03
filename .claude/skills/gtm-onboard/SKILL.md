@@ -6,10 +6,9 @@ argument-hint: <workspace> <website-url>
 
 # GTM Onboard — crear/refrescar la memoria de un workspace
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio y aplica lo aprendido en onboardings pasados.
-2. Si `workspaces/<workspace>/` no existe, cópialo desde `workspaces/_template/`.
-3. Si ya existe un `PROFILE.md`, léelo primero: esto es un refresh, no un reemplazo — conserva lo que siga siendo válido y marca lo que cambió.
+## Antes de empezar
+1. Si `workspaces/<workspace>/` no existe, cópialo desde `workspaces/_template/`.
+2. Si ya existe un `PROFILE.md`, léelo primero: esto es un refresh, no un reemplazo — conserva lo que siga siendo válido y marca lo que cambió.
 
 ## Pasos
 
@@ -34,5 +33,5 @@ Llena `workspaces/<workspace>/PROFILE.md` siguiendo su estructura. Regla: cada a
 ### 5. Confirmar con el usuario
 Presenta un resumen de 10 líneas y pregunta qué corregir. **Las correcciones del usuario valen más que tu análisis** — intégralas al PROFILE.md marcadas como `[confirmado por el cliente]`.
 
-## Al terminar (contrato de memoria)
-- Registra en `LEARNINGS.md` de este skill: qué fuentes dieron mejor señal, qué se te escapó y el usuario corrigió, qué preguntas de confirmación resultaron más útiles.
+## Al terminar
+- A `LEARNINGS.md` de este skill: qué fuentes dieron mejor señal, qué se te escapó y el usuario corrigió.

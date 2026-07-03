@@ -6,9 +6,8 @@ argument-hint: <workspace> <email|domain|nombre|archivo.csv>
 
 # GTM Check Contact — historial y dedupe
 
-## Antes de empezar (contrato de memoria)
-1. Lee `LEARNINGS.md` en este directorio.
-2. Requiere `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el entorno.
+## Antes de empezar
+Requiere `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el entorno.
 
 ## Pasos
 
@@ -34,6 +33,6 @@ Contra la API REST de Supabase (mismo patrón que `segment_companies.py`):
 ### 4. Reporte
 Para CSVs: tabla resumen por veredicto + archivo filtrado listo para campaña (solo `NUEVO`, `EN_BASE_SIN_CONTACTAR` y `CONTACTADO_FRIO`). Para leads sueltos: la historia completa en 5 líneas — cuándo, qué campaña, qué ángulo, qué pasó.
 
-## Al terminar (contrato de memoria)
+## Al terminar
 - Si detectaste huecos en la memoria (envíos que existieron en Instantly pero no están en `outreach_log`), repórtalo: significa que falta correr `scripts/instantly_sync.py`.
-- Registra en `LEARNINGS.md` patrones útiles (ej. dominios con múltiples marcas, matching que falló).
+- A `LEARNINGS.md` de este skill: patrones de matching (ej. dominios con múltiples marcas, matching que falló).

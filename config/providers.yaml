@@ -1,0 +1,61 @@
+# Configuración de proveedores de list building y enriquecimiento.
+# Los skills gtm-lists-aiark y gtm-prospeo leen este archivo al arrancar.
+# Cambia valores aquí — no en los skills ni en los scripts.
+
+defaults:
+  workspace: unprospect
+  output_dir: lists/              # los CSVs generados caen en lists/<workspace>/
+  sample_size: 25                 # tamaño de la muestra de aprobación antes de exportar en grande
+  dedupe:
+    against_outreach_log: true    # excluir leads ya contactados (Supabase outreach_log)
+    recontact_after_days: 90      # antes de esto un lead contactado se excluye siempre
+
+aiark:
+  env_key: AIARK_KEY              # nombre de la env var con el API key (header X-TOKEN)
+  base_url: https://api.ai-ark.com/api/developer-portal/v1
+  rate_limit_rps: 4               # el límite real es 5 rps / 300 rpm — dejamos margen
+  page_size: 100                  # máximo por página en search
+  export:
+    max_size: 10000               # máximo por job de export con email
+    verified_only: true           # true = solo SMTP verificado; false = incluir CATCH_ALL
+    poll_seconds: 30              # cada cuánto consultar estadísticas del job async
+  exclusion_lists:
+    enabled: true                 # subir dominios/IDs ya contactados como lista de exclusión
+    max_items: 10000              # límite de AI Ark por lista (expiran a las 24h)
+  lookalike:
+    max_domains: 5                # límite del filtro lookalikeDomains
+
+prospeo:
+  env_key: PROSPEO_KEY            # nombre de la env var con el API key (header X-KEY)
+  base_url: https://api.prospeo.io
+  rate_limit_rps: 2               # límite real 2–2.5 rps
+  search:
+    page_size: 25                 # fijo de la API
+    max_results_per_search: 25000 # límite duro; arriba de esto se parte por estado/geo
+    verified_email_only: true     # person_contact_details.email = ["VERIFIED"]
+    hide_already_exported: true   # person_duplicate_control
+  enrich:
+    only_verified_email: true
+    enrich_mobile: false          # 10 créditos por mobile — activar solo a propósito
+    bulk_size: 50                 # máximo del endpoint bulk
+    # Costo: 1 crédito por email verificado encontrado; NO_MATCH no cobra;
+    # re-enriquecer el mismo lead es gratis por 90 días.
+
+# Columnas estándar del CSV de salida — el contrato con gtm-check-contact,
+# gtm-personalize y el upload a Instantly. Todo proveedor mapea a esto.
+csv_schema:
+  - email
+  - first_name
+  - last_name
+  - job_title
+  - seniority
+  - linkedin_url
+  - company_name
+  - company_domain
+  - company_linkedin
+  - company_industry
+  - company_headcount
+  - company_location
+  - email_status        # VERIFIED | CATCH_ALL | UNKNOWN
+  - source              # aiark | prospeo | user
+  - source_id           # id del proveedor para re-consultas

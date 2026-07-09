@@ -1,6 +1,6 @@
 ---
 name: gtm-web-crawler
-description: Crawler de sitios web self-host y gratis ($0) para enrichment profundo. Dado un dominio, renderiza JS (rinde SPAs/Angular), navega solo las secciones de alto valor (nosotros, servicios, aviso de privacidad) y devuelve markdown limpio para personalización de cold email. Motor crawl4ai (render + deep-crawl priorizado + click nativo). Corre en batch con concurrencia y reanudación. Lo que no rinde (Cloudflare/JS raro) se marca para escalar a capa agéntica.
+description: Crawler de sitios web self-host y gratis ($0) para enrichment profundo. Dado un dominio, renderiza JS (rinde SPAs/Angular), navega solo las secciones de alto valor (nosotros, servicios, aviso de privacidad) y devuelve markdown limpio como raw data para enrichment y segmentación (a quién le venden, si es B2B, casos de estudio, sectores). Motor crawl4ai (render + deep-crawl priorizado + click nativo). Corre en batch con concurrencia y reanudación. Lo que no rinde (Cloudflare/JS raro) se marca para escalar a capa agéntica.
 argument-hint: <dominio | archivo.txt/csv> [--max-pages N] [--concurrency N] [--out dir]
 ---
 
@@ -48,7 +48,7 @@ Un `<out>/<dominio>.json` por sitio:
   "pages": [ {"url":"...", "path":"/nosotros", "chars": 1234, "markdown":"..."} ],
   "combined_markdown": "# /\n...\n---\n# /nosotros\n..." }
 ```
-- `combined_markdown` es lo que alimenta a `gtm-copy` / `gtm-campaign-ideation`.
+- `combined_markdown` es **raw data para enrichment y segmentación** (a quién le venden, si es B2B o no, casos de estudio, sectores, etc.). NO es copy ni feed a `gtm-copy`; el análisis/extracción de señales es un paso posterior aparte.
 - `ok:false` con `reason: sin_contenido_util__escalar_a_capa_B_agentica` = challenge/bot-protection
   (Cloudflare) o sitio muerto → esos van a la **Capa B agéntica** (browser-use/Stagehand), no se inventan.
 

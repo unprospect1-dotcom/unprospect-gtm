@@ -1,5 +1,15 @@
 # LEARNINGS — gtm-enrich-web
 
+## 2026-07-09 — Desbloqueo de Chromium/Playwright headless en el sandbox CCR (crítico para toda la fase 2)
+Ningún scraper con JS (crawl4ai, scrapy-playwright, browser-use, Stagehand) arranca en el sandbox sin esta config. Tres bloqueos encadenados, todos resueltos en `deep_scrape/sandbox_browser.py`:
+1. **Binario**: el Playwright empaquetado pide un build de chromium que no está instalado. Usar el preinstalado con `executable_path=/opt/pw-browsers/chromium` (hay symlink al chrome real). crawl4ai no expone `executable_path` → monkeypatch de `BrowserManager._build_browser_args` (ver `patch_crawl4ai()`).
+2. **Proxy + CA**: todo el egress va por `$HTTPS_PROXY` (127.0.0.1:33803). Chromium necesita `--proxy-server=$HTTPS_PROXY` **y** `--proxy-bypass-list=<-loopback>` (sin esto bypassa y da ERR_CONNECTION_RESET). Además el NSS store de Chromium (`~/.pki/nssdb`) llega **vacío** — el entorno NO lo siembra — hay que importar el CA del proxy con `certutil -A -t C,, -i /root/.ccr/ca-bundle.crt`. Instalar `certutil` con `apt-get install libnss3-tools` (tras `apt-get update`).
+3. **El bug fino — reset del ClientHello TLS1.3**: el middlebox de inspección TLS resetea el ClientHello grande de Chromium (keyshare post-quantum, partido en varios paquetes). Síntoma: `ERR_CONNECTION_RESET` en TODO sitio permitido aunque curl funcione. Diagnóstico: `--log-net-log` mostró `socket_bio_adapter.cc`, `ssl_error:1`, `os_error:104` (ECONNRESET) en el handshake. **Fix: `--ssl-version-max=tls1.2`** (los flags `--disable-features=PostQuantumKyber…` NO bastaron en este build).
+4. **Trampa de `certutil -N`**: correr `-N` sobre un db existente cuelga pidiendo password. `bootstrap_nss()` es idempotente: solo inicializa si no existe y con `stdin=DEVNULL`+timeout.
+5. **trafilatura.fetch_url NO usa el proxy** y cuelga sin timeout → bajar el HTML con `requests` (respeta `$HTTPS_PROXY` + `$REQUESTS_CA_BUNDLE`) y pasarlo a `trafilatura.extract`.
+6. **Para SPAs, `wait_until='networkidle'` es poco fiable** (a55 nunca estabiliza por analytics) → usar `domcontentloaded` + `delay_before_return_html` fijo (~3.5s).
+7. Correr el bake-off **por etapas en procesos separados** con escritura incremental del JSON: una corrida monolítica murió por OOM (exit 137) y perdió todo por guardar solo al final.
+
 ## 2026-07-09 — Corrida completa dominio-only (2,177 SOFOMes, tabla `sofoms`)
 Pipeline de 3 capas ejecutado en escala real. Resultado final: **1,302 found / 843 🟣 not_found / 26 defunct / 6 partial (piloto)**, con 28 ligadas por dominio a `companies`. Costo Parallel ≈ $11 USD.
 

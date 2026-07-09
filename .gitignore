@@ -3,3 +3,8 @@ __pycache__/
 .pytest_cache/
 lists/**/*.csv
 lists/**/*.jsonl
+
+# gtm-web-crawler: venv y salidas locales (se regeneran con setup.sh / crawl.py)
+.claude/skills/gtm-web-crawler/.venv/
+.claude/skills/gtm-web-crawler/crawl_out/
+crawl_out/

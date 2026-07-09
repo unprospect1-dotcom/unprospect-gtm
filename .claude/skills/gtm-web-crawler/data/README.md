@@ -5,6 +5,9 @@ Salida del crawl de `gtm-web-crawler` sobre los **1,295 dominios únicos usables
 segmentación** (a quién le venden, si es B2B, casos de estudio, sectores) — el análisis
 es un paso posterior, este es solo el insumo.
 
+**También está en Supabase** (fuente canónica para el paso posterior): tabla `site_crawls`,
+1,295 filas, join por `sofoms.domain = site_crawls.domain`. Este `.gz` es el respaldo/portable.
+
 ## Archivos
 - `sofoms_crawls.jsonl.gz` (7.5 MB) — una línea JSON por dominio:
   `{domain, ok, n_pages, secs, reason, pages:[{path,url}], combined_markdown}`.

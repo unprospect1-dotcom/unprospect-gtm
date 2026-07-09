@@ -39,7 +39,22 @@ python .../crawl.py --input doms.txt --max-pages 6 --depth 1 --concurrency 4
 
 Flags: `--max-pages` (páginas por sitio, def 6), `--depth` (profundidad de crawl, def 1),
 `--concurrency` (dominios en paralelo, def 4), `--out` (dir de salida, def `crawl_out`),
-`--no-resume` (rehacer aunque exista). **Por defecto reanuda**: si ya existe `<out>/<dominio>.json`, lo salta.
+`--no-resume` (rehacer aunque exista), `--supabase` (persistir cada resultado a la tabla
+`site_crawls` durante la corrida). **Por defecto reanuda**: si ya existe `<out>/<dominio>.json`, lo salta.
+
+## Persistencia a Supabase (recomendado para batch grande)
+```bash
+# durante el crawl (upsert por dominio, sobrevive reciclado del contenedor):
+python .../crawl.py --input dominios.csv --out crawl_out --supabase --concurrency 5
+
+# o cargar despues un dir/artefacto ya crawleado:
+python .../load_supabase.py --in crawl_out
+python .../load_supabase.py --in data/sofoms_crawls.jsonl.gz
+```
+Escribe a la tabla **`site_crawls`** (una fila por dominio; `combined_markdown` es el raw
+data para enrichment/segmentación). La tabla se crea sola (DDL idempotente via Management
+API con `SUPABASE_TOKEN`). El upsert usa `SUPABASE_SERVICE_ROLE_KEY` (PostgREST). Join
+posterior: `sofoms.domain = site_crawls.domain`. Migración en `supabase/migrations/003_site_crawls.sql`.
 
 ## Salida
 Un `<out>/<dominio>.json` por sitio:

@@ -107,7 +107,14 @@ async def main():
     ap.add_argument("--depth", type=int, default=1)
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--no-resume", action="store_true")
+    ap.add_argument("--supabase", action="store_true",
+                    help="persistir cada resultado a la tabla site_crawls (requiere SUPABASE_*).")
     args = ap.parse_args()
+
+    sink = None
+    if args.supabase:
+        import load_supabase as sink
+        sink.ensure_table()
 
     domains = read_domains(args)
     if not domains:
@@ -134,6 +141,11 @@ async def main():
                 res = await crawl_one(crawler, d, args.depth, args.max_pages)
             json.dump(res, open(os.path.join(args.out, f"{d}.json"), "w"),
                       indent=2, ensure_ascii=False)
+            if sink:
+                try:
+                    sink.upsert([sink.to_row(res)])
+                except Exception as e:
+                    print(f"     (supabase upsert fallo para {d}: {str(e)[:60]})", flush=True)
             if res["ok"]:
                 ok += 1
             else:

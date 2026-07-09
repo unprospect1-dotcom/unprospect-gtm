@@ -63,7 +63,9 @@ Un `<out>/<dominio>.json` por sitio:
   "pages": [ {"url":"...", "path":"/nosotros", "chars": 1234, "markdown":"..."} ],
   "combined_markdown": "# /\n...\n---\n# /nosotros\n..." }
 ```
-- `combined_markdown` es **raw data para enrichment y segmentación** (a quién le venden, si es B2B o no, casos de estudio, sectores, etc.). NO es copy ni feed a `gtm-copy`; el análisis/extracción de señales es un paso posterior aparte.
+- `combined_markdown` es el crawl **crudo** (con menús, imágenes, links — ruidoso).
+- `clean_text` (columna en Supabase / se genera con `clean_markdown.py`) es el mismo contenido **limpio**: sin imágenes, links delinkeados, menús/footers dedupeados, ruido de formularios fuera. ~58% más chico (35K→15K chars/sitio). **Esto es lo que se le pasa al LLM** para enrichment/segmentación (a quién le venden, B2B o no, casos de estudio, sectores) — NO es copy; el análisis es un paso posterior aparte.
+- Para futuras corridas `crawl.py` ya usa el filtro de densidad de crawl4ai (`fit_markdown`) + `clean_markdown` encima, así el contenido sale denso desde el inicio.
 - `ok:false` con `reason: sin_contenido_util__escalar_a_capa_B_agentica` = challenge/bot-protection
   (Cloudflare) o sitio muerto → esos van a la **Capa B agéntica** (browser-use/Stagehand), no se inventan.
 

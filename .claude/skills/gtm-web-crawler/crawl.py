@@ -54,13 +54,19 @@ def build_run_config(domain, depth, max_pages):
     from crawl4ai import CrawlerRunConfig, CacheMode
     from crawl4ai.deep_crawling import (BestFirstCrawlingStrategy, FilterChain,
                                         DomainFilter, KeywordRelevanceScorer)
+    from crawl4ai.content_filter_strategy import PruningContentFilter
+    from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
     strat = BestFirstCrawlingStrategy(
         max_depth=depth, max_pages=max_pages,
         url_scorer=KeywordRelevanceScorer(keywords=HIGH_VALUE_KW, weight=1.0),
         filter_chain=FilterChain([DomainFilter(allowed_domains=[domain])]),
     )
+    # filtro de densidad: tira menús/footers/boilerplate de baja densidad (-> fit_markdown)
+    mdgen = DefaultMarkdownGenerator(
+        content_filter=PruningContentFilter(threshold=0.48, threshold_type="fixed"))
     return CrawlerRunConfig(
         deep_crawl_strategy=strat, cache_mode=CacheMode.BYPASS,
+        markdown_generator=mdgen,
         wait_until="domcontentloaded", delay_before_return_html=3.0,
         page_timeout=45000, scan_full_page=True, verbose=False, stream=False,
     )
@@ -75,7 +81,9 @@ async def crawl_one(crawler, domain, depth, max_pages):
         for r in results:
             if not r.success:
                 continue
-            md = r.markdown.raw_markdown if hasattr(r.markdown, "raw_markdown") else str(r.markdown)
+            # preferir fit_markdown (denso, sin boilerplate) si el filtro lo produjo
+            md = getattr(r.markdown, "fit_markdown", "") or getattr(r.markdown, "raw_markdown", "") \
+                 if hasattr(r.markdown, "raw_markdown") else str(r.markdown)
             path = r.url.replace("https://", "").replace("http://", "").replace("www.", "")
             path = "/" + path.split("/", 1)[1] if "/" in path.split("//")[-1] else "/"
             key = path.rstrip("/") or "/"

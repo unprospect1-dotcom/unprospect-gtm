@@ -11,6 +11,8 @@ Uso:
 """
 import os, sys, json, glob, gzip, argparse, time, re
 import requests
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from clean_markdown import clean_markdown
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -60,10 +62,12 @@ def upsert(rows):
             time.sleep(2 ** attempt)
 
 def to_row(d):
+    raw = d.get("combined_markdown") or ""
     return {"domain": d["domain"], "ok": d["ok"], "n_pages": d.get("n_pages", 0),
             "secs": d.get("secs"), "reason": d.get("reason"),
             "pages": d.get("pages") or None,
-            "combined_markdown": d.get("combined_markdown") or None}
+            "combined_markdown": raw or None,
+            "clean_text": clean_markdown(raw) or None}
 
 def read_records(path):
     if os.path.isdir(path):

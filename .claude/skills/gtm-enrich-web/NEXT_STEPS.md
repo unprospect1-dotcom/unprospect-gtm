@@ -4,13 +4,13 @@
 - La capa de **descubrimiento de dominio** está resuelta y probada a escala (2,177 SOFOMes): Parallel `lite` + triage + verificación con subagentes. Ver `SKILL.md` y `LEARNINGS.md`.
 - En `sofoms`: 1,310 con dominio (`discarded=false`), 867 sin dominio descartadas (`discarded=true`). Las usables para campaña salen con `where discarded = false`.
 
-## Bake-off resuelto (2026-07-09) — motor elegido: crawl4ai
+## Bake-off resuelto (2026-07-09) — motor: crawl4ai, ya empaquetado como skill `gtm-web-crawler`
 Objetivo: una **capa de enrichment profundo** que, dado un dominio, extraiga el contenido del sitio para personalización de cold email (no solo "existe el dominio", sino qué hace, a quién, señales de dolor observable).
 
-Se corrió el bake-off sobre 8 dominios SOFOM reales (ver `deep_scrape/`). Decisión:
-- **Capa A (masiva, $0): `crawl4ai`** — render JS (resuelve SPA), markdown limpio (alimenta directo a `gtm-copy`), descubre links internos y hace **deep-crawl acotado** que navega solo las secciones (nosotros/servicios/aviso de privacidad), y soporta **click nativo** (js_code / C4A-Script) sin LLM por página. 8/8 ok, ~7.6s/sitio.
-- **Fast-path: `trafilatura`** para sitios obviamente estáticos (1s), pero NO puede ir solo: devuelve 0 chars en SPAs (paya, ion).
-- **Capa B (agéntica, LLM, solo residuo): browser-use / Stagehand** para lo que la Capa A deja delgado: Cloudflare (aspiria.mx quedó en "Just a moment...") y JS raro. Aquí es donde "autoidentifica y pica botones". Mismo patrón que Parallel→subagentes.
+**La Capa A ya es un skill independiente y probado: `gtm-web-crawler`** (ver su `SKILL.md` y `BENCHMARK.md`). Corre con `bash .claude/skills/gtm-web-crawler/setup.sh` + `crawl.py --input <dominios.csv>`. Decisión del bake-off (8 dominios SOFOM reales):
+- **Capa A (masiva, $0): `crawl4ai`** — 8/8, render JS (resuelve SPA), markdown limpio, deep-crawl priorizado que navega secciones solo, click nativo sin LLM por página.
+- Descartados: trafilatura (0 chars en SPAs), Scrapy/Zyte (spider-por-layout / de pago). Ver `gtm-web-crawler/BENCHMARK.md`.
+- **Capa B (agéntica, LLM, solo residuo): browser-use / Stagehand** para lo que la Capa A marca `ok:false`: Cloudflare y JS raro. Aquí "autoidentifica y pica botones". Mismo patrón que Parallel→subagentes. **Pendiente de integrar.**
 
 ### Pendiente para integrar como fase 2 del skill
 1. Diseñar el crawl acotado por sitio: seed=home, seguir SOLO links de alto valor (about/nosotros, servicios/productos, aviso-de-privacidad/legal, contacto), tope ~6 páginas, dedupe www/no-www.

@@ -1,0 +1,5 @@
+# artefactos transitorios de corridas (la fuente de verdad es Supabase)
+batches/
+ct_*.txt
+cls_*.jsonl
+verify_*.jsonl

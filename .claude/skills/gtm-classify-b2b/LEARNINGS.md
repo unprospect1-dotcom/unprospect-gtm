@@ -1,0 +1,51 @@
+# LEARNINGS — gtm-classify-b2b
+
+## Validación inicial (sample de 40 dominios SOFOM, estratificado por tamaño de clean_text)
+
+Verdad-base: 40 dominios etiquetados a mano leyendo el clean_text completo (`golden`).
+Distribución tras adjudicar: 23 b2b · 7 b2c · 7 mixed · 3 unclear.
+
+| comparación | acuerdo |
+|---|---|
+| haiku (capa 1) ↔ sonnet (capa 2), ciego | **95%** (38/40) |
+| haiku ↔ verdad-base | 92% (37/40) |
+| sonnet ↔ verdad-base | 92% (37/40) |
+| los tres coinciden | 90% (36/40) |
+
+**Todas** las discrepancias cayeron en casos marcados "hard" — empresas de frontera que de
+verdad sirven a varios segmentos (afalianza, cualli, inyecta, patrimonio). **Ningún caso
+claro se clasificó mal.** Conclusión: la precisión residual es ambigüedad irreducible, no un
+bug del prompt. Por eso el diseño no busca 100% — busca **coincidencia de dos capas** y
+marca el resto para revisión.
+
+## Reglas que costó aprender (están en PROMPT.md)
+
+1. **Objeto social ≠ producto.** `solvantia.com` dice en su texto legal "otorgamiento de
+   crédito, arrendamiento y factoraje" (suena b2b) pero su único producto real/hero es
+   "préstamo vía nómina" a la persona → **b2c**. El objeto social es boilerplate; clasificar
+   por lo que el sitio OFRECE, no por lo que la razón social permite.
+2. **No truncar el clean_text.** La verdad-base inicial se hizo con 1.6K chars y falló en
+   `lumofinancieradelcentro.com`: los primeros 1.6K eran puro banner de cookies; el hero real
+   ("Sector Gobierno, Estados y Municipios" → b2b) venía después. Alimentar ≥7–8K chars.
+   Los subagentes que vieron 7K acertaron donde la verdad-base truncada falló.
+3. **Nómina depende del destinatario.** `impulso-mas`/`solvantia` (al trabajador) → b2c;
+   `vinlasofom` (a la empresa como prestación para empleados) → b2b.
+4. **Casos b2b no obvios:** software para financieras (`flexcapital.lendus`), captable/SPV
+   para founders (`arcafinanciera`, "no damos créditos"), sector gobierno (`lumo`,
+   `infratek`), y el que declara "no atendemos personas físicas" (`opcr`).
+
+## Diseño que quedó "a prueba de balas"
+
+- **Solo subagentes del harness** (agnóstico Claude Code ↔ Codex): nada de servicios externos.
+- Capa 1 barata en masa: subagentes con el modelo más barato (haiku / codex-mini / …).
+- Capa 2 verificación **ciega** e independiente (subagentes de otro modelo, idealmente más
+  fuerte), sobre sample + todos los `low`/`mixed`/`unclear`.
+- **verify_agree** en Supabase: `true` = confiar; `false` = cola de revisión humana
+  (en la validación fue solo el 5%, todo frontera).
+- El conteo B2B se reporta con banda: consenso (ambas capas b2b) … cualquiera (alguna b2b).
+
+## Patrón de subagente (capa 1 haiku o capa 2 sonnet)
+
+Cada subagente: (1) corre un fetch que baja clean_text de `site_crawls` a `ct_<dom>.txt`,
+(2) lee cada archivo, (3) clasifica con el rubro de PROMPT.md, (4) escribe un array JSON.
+Los verificadores van **ciegos** (no ven las etiquetas de la capa 1). Batch ~40 dominios/subagente.

@@ -63,8 +63,13 @@ Entorno: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_TOKEN` (DDL). So
 ```bash
 cd .claude/skills/gtm-classify-b2b
 # 1) preparar lotes (resumible: excluye los ya clasificados)
-python3 make_batches.py --size 40 --outdir batches
+python3 make_batches.py --size 12 --outdir batches   # lotes CHICOS: ver aviso abajo
 ```
+
+> **Tamaño de lote (crítico):** usa lotes de **≤12-15 dominios** por subagente. En la
+> validación, lotes de 40 hicieron que el modelo barato se sesgara a b2b (61% de acuerdo
+> con la verificación vs 95% con lotes de 10; conteo b2b crudo 60% → real ~46%). Lotes
+> chicos = más subagentes pero clasificación confiable.
 
 **2) CAPA 1 — despachar un subagente por `batches/batch_NN.txt`**, con el modelo más barato
 del harness. Instrucción para cada subagente (auto-contenida):

@@ -5,8 +5,11 @@ Saca de Supabase los dominios con crawl útil (site_crawls.ok, clean_text no nul
 todavía NO están clasificados en b2b_classification, y los parte en lotes de --size.
 Escribe <outdir>/batch_NN.txt (un dominio por línea) e imprime el plan de despacho.
 
-  python make_batches.py --size 40 --outdir batches
-  python make_batches.py --size 40 --outdir batches --reclassify   # incluye ya clasificados
+  python make_batches.py --size 12 --outdir batches
+  python make_batches.py --size 12 --outdir batches --reclassify   # incluye ya clasificados
+
+OJO: usa lotes CHICOS (<=12-15). A 40/lote el clasificador barato pierde calidad y se sesga
+a b2b (ver LEARNINGS.md: 40/lote dio solo 61% de acuerdo con la verificación).
 
 Luego: el orquestador lanza UN subagente por batch_NN.txt (ver SKILL.md). Es resumible:
 al re-correr, ya no incluye los que quedaron en b2b_classification.
@@ -28,7 +31,7 @@ def get_all(url, headers, params):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--size", type=int, default=40)
+    ap.add_argument("--size", type=int, default=12)
     ap.add_argument("--outdir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "batches"))
     ap.add_argument("--reclassify", action="store_true")
     a = ap.parse_args()

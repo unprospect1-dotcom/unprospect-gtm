@@ -44,6 +44,27 @@ marca el resto para revisión.
   (en la validación fue solo el 5%, todo frontera).
 - El conteo B2B se reporta con banda: consenso (ambas capas b2b) … cualquiera (alguna b2b).
 
+## Corrida completa (962 SOFOMs) y el hallazgo del tamaño de lote
+
+Primera corrida masiva: subagentes haiku a **40 dominios/lote**. La verificación ciega
+(sonnet, muestra estratificada de 160) reveló el problema:
+
+- Acuerdo capa1↔capa2 en el run masivo: **solo 61%** (vs 95% en el sample de 40 con lotes
+  de 10). El modelo barato, con 40 items por subagente, trabaja sloppy y **se sesga a b2b**.
+- Matriz de confusión: de lo que haiku marcó "b2b", sonnet confirmó 61%, movió 18% a b2c,
+  15% a mixed, 6% a unclear. Adjudiqué 6/6 desacuerdos a mano → **sonnet tenía razón las 6
+  veces** (gocredit=jubilados/nómina→b2c; impulsofinanciero/invex=PyME+personal→mixed; etc.).
+- Conteo B2B: crudo **60%** (579/962) → corregido por confusión **~46%** (443/962).
+  Distribución corregida: b2b 46% · b2c 28% · mixed 15% · unclear 10%.
+
+**Regla dura:** el clasificador barato corre en **lotes ≤12-15**. A 40 se degrada y sobre-
+llama b2b. `make_batches.py` ahora usa `--size 12` por defecto. Los `b2c`/`unclear` del
+modelo barato son más confiables que sus `b2b`/`mixed` (esos hay que verificar sí o sí).
+
+**Estado de los datos en Supabase:** 200 filas con verificación real (40 golden + 160
+muestra masiva); el resto son capa1 haiku-40 (sesgado, `verified=false`). Para etiquetas
+per-dominio confiables en los 762 restantes hay que re-correr la capa 1 a lotes chicos.
+
 ## Patrón de subagente (capa 1 haiku o capa 2 sonnet)
 
 Cada subagente: (1) corre un fetch que baja clean_text de `site_crawls` a `ct_<dom>.txt`,

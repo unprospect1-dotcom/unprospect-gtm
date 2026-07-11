@@ -6,3 +6,4 @@ ct_*.txt
 cls_*.jsonl
 verify_*.jsonl
 _*.json
+rerun/

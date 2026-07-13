@@ -74,7 +74,22 @@ Inputs obligatorios por modo definidos en el argument-hint; presupuesto y saldo 
 ### Fase D — Estreno con tu caso real (cuando pases la lista)
 Correr el modo "contar" sobre tu set de empresas: gratis en GetLeads + cross-check AI Ark en muestra del 10% (≈0.5 × N/10 créditos). Ejemplo: 200 empresas = $0 GetLeads + ~10 créditos AI Ark.
 
-## 5. Qué NO se hace sin aprobación explícita
+## 5. Pipeline canónico de categorías (definido por el usuario, 2026-07-13)
+
+El flujo NO verifica antes de enumerar — el web scraping propio ES la verificación y la segmentación:
+
+1. **Enumerar empresas** en AI Ark por unión de lentes (industria ∪ NAICS, sin enterprise = employeeSize autoreportado 1–999 por default). 0.1 créditos/empresa. La respuesta ya trae dominio, staff.range (autoreportado), NAICS y descripción.
+2. **Dedupe** contra Supabase por dominio (gratis).
+3. **Enriquecer con el crawler propio** (`gtm-web-crawler`, $0) → clean_text por sitio.
+4. **Segmentar por subcategoría desde el sitio** (con subagentes estilo `gtm-classify-b2b`): en autotransporte → flota de carga general / refrigerado / freight forwarder / 3PL / software para transporte / paquetería. La etiqueta de LinkedIn NO decide la subcategoría; el sitio sí.
+5. **Bucket por tamaño de equipo comercial EN EL MISMO PASO** (GetLeads count por dominio con job_functions Sales, gratis, ~50 empresas/min): 0 (sin señal) / 1–2 / 3–10 / 11–50 / 50+. Nota: el conteo de depto es LinkedIn-based — en transporte el personal comercial/administrativo SÍ suele tener LinkedIn aunque los operadores no; aún así 0 se marca "sin señal", nunca "sin equipo".
+6. Salida: companies CSV con `dominio, subcategoría, sales_count, sales_bucket, staff_range_autoreportado` → alimenta `gtm-pain-segments` y de ahí la receta DM-unión por segmento.
+
+Universos medidos (sondeos 2026-07-13, sin enterprise donde se indica):
+- **Autotransporte MX**: industria 7,649 ∪ NAICS 484 3,880 (∩ 1,423) ≈ **10,100 total / ~7,500 sin enterprise**. Núcleo de precisión (∩): 1,423. Mundo real (SICT 2024): ~38,400 pequeñas+medianas formales (LinkedIn ve ~25%).
+- **Comercio al por mayor MX**: industria "wholesale" 14,053 ∪ NAICS 423/424/425 39,052 (∩ 2,596) ≈ **50,500 total** — enumerarlo completo costaría ~5,000 créditos: se hace por etapas (núcleo ∩ → etiqueta industria sin enterprise → expansión NAICS por sub-vertical).
+
+## 6. Qué NO se hace sin aprobación explícita
 
 - Ningún export, search con size>1, reveal ni enrichment masivo — cualquier llamada que gaste >5 créditos se reporta antes con costo estimado y saldo.
 - Ocean queda intacto (4,669) hasta que haya un caso lookalike real.

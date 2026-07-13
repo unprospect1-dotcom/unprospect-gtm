@@ -20,6 +20,7 @@ argument-hint: <workspace> <modo: contar|lista|dms|fallback|enriquecer|señales>
 - Cobertura de email VALID fuera de USA es débil (México ~6%) — para emails de listas MX el cierre es AI Ark (encuentra y verifica en tiempo real, no cobra si no hay email). Este skill produce la selección; `gtm-lists-aiark` produce los emails.
 
 ## Referencia técnica
+- **Catálogo completo de filtros, playbook de cuándo usar cuál, y TODOS los valores (515 industrias, 22 funciones, 73 personas, países): `FILTERS.md` en este directorio. Consúltalo antes de armar cualquier query.**
 - Auth: `Authorization: Bearer` (o `X-API-Key`) con la key `glb_live_…`. Base: `getleads.base_url`. Rate: 100 req/min global, 429 al excederse.
 - Docs completas (no públicas — extraídas de su SPA): `reference/getleads-api.md`. Endpoints clave:
   - `POST /contacts/search/count` — **GRATIS**. Mismo body que search. Devuelve `total_matching` + `creditsRemaining`.

@@ -12,7 +12,8 @@ argument-hint: <workspace> [segmento | "lookalikes de X, Y" | descripción de la
 3. Verifica que la env var indicada en `aiark.env_key` exista. Si no, detente y dilo — no simules.
 
 ## Referencia técnica de la API
-- Auth: header `X-TOKEN`. Base: `aiark.base_url`. Rate limit: 5 rps / 300 rpm (respeta `rate_limit_rps`), 429 al excederse.
+- **Catálogo completo de filtros, playbook de cuándo usar cuál, y TODOS los valores de enums (148 industrias, 27 deptos, 180 funciones, NAICS, modos): `FILTERS.md` en este directorio. Consúltalo antes de armar cualquier query.**
+- Auth: header `X-TOKEN`. Base: `aiark.base_url`. Rate limit: 5 rps / 300 rpm (respeta `rate_limit_rps`), 429 al excederse. Con Python urllib incluye User-Agent tipo curl (Cloudflare da 403 sin él).
 - **⚠️ El search NO es gratis (verificado 2026-07-13): cobra 0.5 créditos por perfil devuelto.** Sondea totales con `size:1` (`totalElements` sale completo) y nunca pidas páginas que no vas a usar. Para conteos masivos (sizing, tamaño de deptos) usa `gtm-getleads` — sus counts cuestan 0.
 - `POST /companies` — búsqueda de empresas. **`lookalikeDomains` (máx 5 dominios) encuentra similares nativamente** — el camino directo cuando el usuario trae empresas de referencia. Filtros `account.*`: industries, location, employeeSize (RANGE), revenue, technologies (SMART/WORD/STRICT), naics, keyword, funding; y `employee.title/seniority/departmentAndFunction` para exigir que tengan cierto rol.
 - `POST /people` — búsqueda de personas. `account.*` (filtros de SU empresa) + `contact.*`: experience (títulos con modos SMART/WORD/STRICT), seniority (founder/c_suite/vp/director/manager/senior...), location, departmentAndFunction, keyword. Paginación `page`/`size` (máx 100), responde `totalElements` y `trackId`.

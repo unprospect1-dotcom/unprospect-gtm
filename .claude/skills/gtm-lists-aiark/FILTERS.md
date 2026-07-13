@@ -1,0 +1,427 @@
+# AI Ark — Catálogo completo de filtros y valores
+
+> Generado de los OpenAPI docs (docs.ai-ark.com) + verificación en vivo 2026-07-13.
+> El SKILL.md manda; esto es la referencia para armar queries. Costos: company search
+> 0.1 créditos/empresa devuelta; people search 0.5/perfil; export 1/persona con email.
+
+## Cuándo usar qué filtro (playbook)
+
+| Objetivo | Filtro | Nota |
+|---|---|---|
+| Universo por categoría | `industries` (STRICT con el valor exacto del catálogo de abajo) **∪** `naics` | NUNCA una sola: en mayoreo MX NAICS ve 2.8× más que la etiqueta; en transporte la intersección fue solo 14%. Enumerar ambos lentes y dedupe por id. |
+| Sub-nicho semántico | `productAndServices` (SMART) | Muy angosto (300 vs 7,649 en transporte MX) — para precisión, no para universo. |
+| Texto libre en el perfil de empresa | `keyword` | Último recurso; substring ruidoso. Úsalo para nichos sin categoría ("agencia aduanal"). |
+| Tamaño ALCANZABLE | `employeeSize` RANGE | ⚠️ Filtra sobre `staff.total` (conteo LinkedIn), NO el autoreportado. Excluye ~25% sin dato. El autoreportado viene en el response (`summary.staff.range`) — post-filtrar ahí. |
+| Empresas por tamaño de UN DEPTO | `metric.employee: [{function, start, end}]` | ej. equipo de ventas 3–10. Enum de 27 deptos abajo. |
+| Deptos CRECIENDO (señal de inversión) | `metric.growth: [{function, start, end (%), timeFrame}]` | timeFrame: ONE/THREE/SIX/TWELVE/TWENTY_FOUR meses. |
+| Stack tecnológico | `technologies` (SMART/WORD) o `technology` (lista exacta) | |
+| Lookalikes nativos | `lookalikeDomains` (máx 5) | Alternativa gratis a Ocean para lookalike básico. |
+| Personas por rol | `contact.departmentAndFunction` (usar los `master_*`) + `contact.experience` (títulos SMART/WORD/STRICT) | El master agrupa (master_sales incluye inside/field/channel/ops/enablement...). Título en español via experience con WORD. |
+| Ubicación | `location` (texto) | ⚠️ "Mexico" matchea "New Mexico" — SIEMPRE post-filtrar `location.headquarter.country == "Mexico"` del response. |
+| Excluir ya contactados | `lists.*.exclude` (listas de hasta 10k, expiran 24h) | |
+
+## Sintaxis
+- Filtros de texto: `{any|all: {include|exclude: {mode: SMART|WORD|STRICT, content: [...]}}}`.
+- Filtros de enum/exactos: `{any: {include: [...], exclude: [...]}}`. `any`=OR, `all`=AND.
+- Rangos: `{"type": "RANGE", "range": [{"start": N, "end": M}]}`.
+- Paginación: `page` (0-based) + `size` (1–100). `totalElements` sale completo con size=1.
+- Auth: header `X-TOKEN` + `User-Agent` tipo curl (urllib de Python sin UA recibe 403 de Cloudflare).
+
+## Industrias (148 — usar STRICT con el valor exacto)
+
+- `alternative medicine`
+- `animation and post-production`
+- `artists and writers`
+- `aviation and aerospace component manufacturing`
+- `biotechnology research`
+- `capital markets`
+- `chemical manufacturing`
+- `education administration programs`
+- `entertainment providers`
+- `environmental services`
+- `events services`
+- `fundraising`
+- `hospitality`
+- `information services`
+- `international affairs`
+- `investment banking`
+- `it services and it consulting`
+- `law enforcement`
+- `law practice`
+- `legislative offices`
+- `movies, videos, and sound`
+- `oil and gas`
+- `online audio and video media`
+- `packaging and containers manufacturing`
+- `performing arts`
+- `pharmaceutical manufacturing`
+- `printing services`
+- `professional training and coaching`
+- `real estate`
+- `research services`
+- `software development`
+- `strategic management services`
+- `truck transportation`
+- `wellness and fitness services`
+- `wholesale`
+- `wireless services`
+- `mining`
+- `photography`
+- `accounting`
+- `airlines and aviation`
+- `armed forces`
+- `automation machinery manufacturing`
+- `banking`
+- `broadcast media production and distribution`
+- `business consulting and services`
+- `civic and social organizations`
+- `civil engineering`
+- `computer games`
+- `computer hardware manufacturing`
+- `computers and electronics manufacturing`
+- `construction`
+- `consumer services`
+- `design services`
+- `e-learning providers`
+- `facilities services`
+- `financial services`
+- `fisheries`
+- `food and beverage manufacturing`
+- `gambling facilities and casinos`
+- `glass, ceramics and concrete manufacturing`
+- `government relations services`
+- `higher education`
+- `investment management`
+- `libraries`
+- `machinery manufacturing`
+- `media production`
+- `medical equipment manufacturing`
+- `mobile gaming apps`
+- `nanotechnology research`
+- `non-profit organizations`
+- `outsourcing and offshoring consulting`
+- `philanthropic fundraising services`
+- `political organizations`
+- `public relations and communications services`
+- `recreational facilities`
+- `religious institutions`
+- `restaurants`
+- `retail`
+- `retail apparel and fashion`
+- `retail art supplies`
+- `semiconductor manufacturing`
+- `staffing and recruiting`
+- `technology, information and internet`
+- `think tanks`
+- `translation and localization`
+- `travel arrangements`
+- `venture capital and private equity principals`
+- `veterinary services`
+- `warehousing and storage`
+- `wholesale building materials`
+- `wholesale import and export`
+- `writing and editing`
+- `legal services`
+- `manufacturing`
+- `musicians`
+- `market research`
+- `administration of justice`
+- `advertising services`
+- `alternative dispute resolution`
+- `appliances, electrical, and electronics manufacturing`
+- `architecture and planning`
+- `beverage manufacturing`
+- `book and periodical publishing`
+- `computer and network security`
+- `computer networking products`
+- `dairy product manufacturing`
+- `defense and space manufacturing`
+- `executive offices`
+- `farming`
+- `food and beverage services`
+- `freight and package transportation`
+- `furniture and home furnishings manufacturing`
+- `government administration`
+- `graphic design`
+- `hospitals and health care`
+- `human resources services`
+- `individual and family services`
+- `industrial machinery manufacturing`
+- `insurance`
+- `international trade and development`
+- `leasing non-residential real estate`
+- `maritime transportation`
+- `medical practices`
+- `mental health care`
+- `motor vehicle manufacturing`
+- `museums, historical sites, and zoos`
+- `newspaper publishing`
+- `paper and forest product manufacturing`
+- `personal care product manufacturing`
+- `plastics manufacturing`
+- `primary and secondary education`
+- `public policy offices`
+- `public safety`
+- `railroad equipment manufacturing`
+- `ranching`
+- `renewable energy semiconductor manufacturing`
+- `retail groceries`
+- `retail luxury goods and jewelry`
+- `retail office equipment`
+- `security and investigations`
+- `shipbuilding`
+- `spectator sports`
+- `sporting goods manufacturing`
+- `telecommunications`
+- `textile manufacturing`
+- `tobacco manufacturing`
+- `transportation, logistics, supply chain and storage`
+- `utilities`
+
+## Departamentos de empresa — para `metric.employee`/`metric.growth` y `CompanyDepartmentEnum` (27)
+
+- `program_and_project_management`
+- `education`
+- `purchasing`
+- `accounting`
+- `sales`
+- `research`
+- `operations`
+- `customer_success_and_support`
+- `legal`
+- `product_management`
+- `media_and_communication`
+- `real_estate`
+- `quality_assurance`
+- `consulting`
+- `arts_and_design`
+- `healthcare_services`
+- `entrepreneurship`
+- `engineering`
+- `community_and_social_services`
+- `marketing`
+- `information_technology`
+- `business_development`
+- `administrative`
+- `military_and_protective_services`
+- `finance`
+- `human_resources`
+- `support`
+
+## Department & Function de personas (180) — los `master_*` agrupan
+
+- `c_suite`
+- `executive`
+- `founder`
+- `product_management`
+- `product_development`
+- `product_mangement`
+- `master_engineering_technical`
+- `artificial_intelligence_machine_learning`
+- `bioengineering`
+- `biometrics`
+- `business_intelligence`
+- `chemical_engineering`
+- `cloud_mobility`
+- `data_science`
+- `devops`
+- `emerging_technology_innovation`
+- `engineering_technical`
+- `industrial_engineering`
+- `mechanic`
+- `mobile_development`
+- `project_management`
+- `research_development`
+- `scrum_master_agile_coach`
+- `software_development`
+- `support_technical_services`
+- `technician`
+- `technology_operations`
+- `test_quality_assurance`
+- `ui_ux`
+- `web_development`
+- `marketing`
+- `digital_marketing`
+- `design`
+- `all_design`
+- `product_ui_ux_design`
+- `graphic_design`
+- `education`
+- `teacher`
+- `principal`
+- `superintendent`
+- `professor`
+- `master_finance`
+- `accounting`
+- `finance`
+- `financial_planning_analysis`
+- `financial_reporting`
+- `financial_strategy`
+- `financial_systems`
+- `internal_audit_control`
+- `investor_relations`
+- `mergers_acquisitions`
+- `financial_risk`
+- `sourcing_procurement`
+- `tax`
+- `treasury`
+- `master_human_resources`
+- `compensation_benefits`
+- `culture_diversity_inclusion`
+- `employee_labor_relations`
+- `health_safety`
+- `human_resource_information_system`
+- `human_resources`
+- `hr_business_partner`
+- `learning_development`
+- `organizational_development`
+- `recruiting_talent_acquisition`
+- `talent_management`
+- `workforce_mangement`
+- `master_information_technology`
+- `application_development`
+- `business_service_management_itsm`
+- `collaboration_web_app`
+- `data_center`
+- `data_warehouse`
+- `database_administration`
+- `ecommerce_development`
+- `enterprise_architecture`
+- `help_desk_desktop_services`
+- `hr_financial_erp_systems`
+- `information_security`
+- `information_technology`
+- `infrastructure`
+- `it_asset_management`
+- `it_audit_it_compliance`
+- `it_operations`
+- `it_procurement`
+- `it_strategy`
+- `networking`
+- `project_program_management`
+- `quality_assurance`
+- `retail_store_systems`
+- `servers`
+- `storage_disaster_recovery`
+- `telecommunications`
+- `virtualization`
+- `master_legal`
+- `compliance`
+- `contracts`
+- `ediscovery`
+- `governmental_affairs_regulatory_law`
+- `intellectual_property_patent`
+- `labor_employment`
+- `lawyer_attorney`
+- `legal`
+- `legal_counsel`
+- `legal_operations`
+- `litigation`
+- `privacy`
+- `master_marketing`
+- `advertising`
+- `brand_management`
+- `content_marketing`
+- `customer_experience`
+- `customer_marketing`
+- `demand_generation`
+- `ecommerce_marketing`
+- `event_marketing`
+- `field_marketing`
+- `lead_generation`
+- `marketing_analytics_insights`
+- `marketing_communications`
+- `product_marketing`
+- `public_relations`
+- `search_engine_optimization_pay_per_click`
+- `social_media_marketing`
+- `strategic_communications`
+- `technical_marketing`
+- `sales`
+- `field_outside_sales`
+- `medical_health`
+- `chiropractics`
+- `dentistry`
+- `doctors_physicians`
+- `first_responder`
+- `infectious_disease`
+- `medical_administration`
+- `medical_education_training`
+- `medicine`
+- `neurology`
+- `nursing`
+- `nutrition_dietetics`
+- `oncology`
+- `pathology`
+- `pharmacy`
+- `physical_therapy`
+- `psychology`
+- `public_health`
+- `radiology`
+- `social_work`
+- `master_operations`
+- `call_center`
+- `construction`
+- `corporate_strategy`
+- `customer_service_support`
+- `enterprise_resource_planning`
+- `facilities_management`
+- `leasing`
+- `logistics`
+- `office_operations`
+- `operations`
+- `physical_security`
+- `project_development`
+- `quality_management`
+- `real_estate`
+- `store_operations`
+- `supply_chain`
+- `customer_success`
+- `master_sales`
+- `account_management`
+- `business_development`
+- `channel_sales`
+- `customer_retention_development`
+- `inside_sales`
+- `partnerships`
+- `sales_enablement`
+- `sales_engineering`
+- `sales_operations`
+- `sales_training`
+- `consulting`
+- `consultant`
+
+## Seniority de personas (12)
+
+- `founder`
+- `owner`
+- `partner`
+- `c_suite`
+- `vp`
+- `director`
+- `head`
+- `manager`
+- `senior`
+- `mid-level`
+- `entry`
+- `intern`
+
+## Tipo de empresa (8)
+
+- `PRIVATELY_HELD`
+- `SELF_OWNED`
+- `SELF_EMPLOYED`
+- `PARTNERSHIP`
+- `PUBLIC_COMPANY`
+- `NON_PROFIT`
+- `EDUCATIONAL`
+- `GOVERNMENT_AGENCY`
+
+## Otros enums
+
+- Modos de match: SMART, WORD, STRICT
+- TimeFrame (meses): ONE, SIX, THREE, TWELVE, TWENTY_FOUR
+- Profile badges: VERIFIED, PREMIUM, OPEN_TO_WORK, INFLUENCER, CREATOR, HIRING
+- Social media: FACEBOOK, INSTAGRAM, TWITTER, LINKEDIN
+- Idiomas: 48 valores (english, spanish, ... — ver OpenAPI)
+- NAICS: códigos de 6 dígitos exactos (los prefijos NO funcionan — '484' da 0; usar 484110, 484121, etc.)

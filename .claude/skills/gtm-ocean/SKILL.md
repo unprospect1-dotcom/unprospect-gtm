@@ -20,9 +20,10 @@ argument-hint: <workspace> <dominios seed separados por coma | descripción>
 - Por eso el flujo es: gratis → 1 crédito → muestra pequeña → aprobación → gasto real.
 
 ## Referencia técnica
-- Auth: header `x-api-token`. Search en `/v3`, el resto en `/v2`. Rate limit self-serve: 60 req/min, 1,000 req/día.
-- `POST /v3/search/companies` — body `{size, searchAfter, companiesFilters: {lookalikeDomains: [...], includeDomains, excludeDomains, ...}}`. Lookalike con modo `precise` (similitud semántica de producto/servicio, default) o `broad` (misma industria). Máx `lookalike.max_domains` seeds. Paginación por cursor `searchAfter`.
-- `POST /v3/search/people` — `peopleFilters` (jobTitles, seniorities, departments, `changedPositionAfter` "YYYY-MM") + filtros de empresa (incl. lookalike). La respuesta trae `id` por persona — **guárdalo: es la llave del reveal**. Campos: name, jobTitle, seniorities, departments, domain, country, linkedinUrl.
+- **Catálogo completo de filtros, playbook y valores (46 categorías propias + 248 industrias LinkedIn, 24 deptos, seniorities, tamaños): `FILTERS.md` en este directorio. Consúltalo antes de armar cualquier query.**
+- Auth: header `x-api-token`. Search en `/v3`, el resto en `/v2`. Rate limit self-serve: 60 req/min, 1,000 req/día. `GET /v2/data-fields` (GRATIS) trae los valores válidos de industrias/regiones/tecnologías.
+- `POST /v3/search/companies` — body `{size, searchAfter, companiesFilters: {lookalikeDomains, includeDomains, excludeDomains, companySizes, industries, linkedinIndustries, keywords, departmentSizes, employeeCountLinkedin/Ocean, primaryLocations (códigos ISO alpha-2, ej. "mx"), ...}}` + `companyMatchingMode: precise|broad`. Paginación por cursor `searchAfter`. ⚠️ Los endpoints `/preview` (conteo) son enterprise-only — en self-serve el sondeo es `size` chico.
+- `POST /v3/search/people` — `peopleFilters` (`jobTitleKeywords {anyOf/allOf/noneOf}`, `seniorities`, `departments`, `skills`, `changedPositionAfter/Before` "YYYY-MM-DD", `connections`, `followers`) + `companiesFilters` anidado (incl. lookalike). La respuesta trae `id` por persona — **guárdalo: es la llave del reveal**.
 - `POST /v2/reveal/emails` — lista de person ids (+ `webhookUrl` opcional). **Async**: los emails llegan después; sin webhook, re-consultar. Solo cobra los verificados que encuentra.
 - `POST /v2/warmup/companies` — valida seeds y dispara crawl de dominios que Ocean no tenga. **Gratis.**
 - `POST /v2/enrich/company` — por dominio; `201` = aún no está en su DB, crawl disparado sin costo, reintentar en 2–5 min.

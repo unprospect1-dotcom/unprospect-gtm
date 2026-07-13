@@ -1,0 +1,694 @@
+# GetLeads — Catálogo completo de filtros y valores
+
+> Generado con `filter-values` en vivo (gratis) 2026-07-13. Referencia API completa: `reference/getleads-api.md`.
+> Costos: search 1 crédito/registro devuelto; **count y filter-values GRATIS**; 100 req/min.
+
+## Cuándo usar qué filtro (playbook)
+
+| Objetivo | Filtro | Nota |
+|---|---|---|
+| Contar lo que sea ANTES de pagar | `POST /contacts/search/count` | GRATIS. Siempre primero. |
+| Personas por depto | `job_functions` (22 valores abajo) | Capa A de la receta DM-unión. En MX pierde 10–42% — unir SIEMPRE con capa B. |
+| Personas por título | `job_titles` (substring, OR entre elementos, sensible a acentos) | Capa B: diccionario ES+EN con/sin acento. `exclude_job_titles: ["Asistente","Assistant"]` obligatorio con "Director". |
+| Personas por nivel | `seniority` (6) o `personas` (73 arquetipos) | En MX el enum de seniority está mal etiquetado — no usarlo solo. |
+| Empresas objetivo | `domains` / `company_name` / `industries` (515) + `headquarters_countries` | Contact-céntrico: el "join" empresa→persona es implícito. |
+| Tamaño de empresa | `company_size_min/max` (brackets) o `employees_min/max` (exacto) | |
+| Señales firmográficas | `revenue`, `technologies`, `founded_year_*`, `total_funding_*`, `monthly_traffic_*`, `followers_*` | |
+| Campos sin filtro dedicado | `where_sql` (SQL crudo AND-combinado) | ej. `MONTHLY_GOOGLE_ADSPEND_ORG > 0` (señal Google Ads para pain-segments). Columnas internas: se ven en el response JSON de un search. |
+| Email utilizable | `email_status: ["VALID"]` | ⚠️ Cobertura MX ~6% — los sin VALID van a AI Ark para email finding. |
+| Estructura por empresa | `max_per_company` (1–50) | 1 dueño + 1 ventas + 1 mkt = 3 corridas por persona. |
+
+Sintaxis: filtros AND entre campos, OR dentro de cada array. Todos los strings de catálogo salen de `GET /contacts/filter-values?field=…` (gratis) — ante duda, consultar en vivo.
+
+## job_functions (22)
+
+- `Sales & Business Development`
+- `Engineering`
+- `Information Technology`
+- `Advertising & Marketing`
+- `Human Resources`
+- `Finance & Accounting`
+- `Operations`
+- `Healthcare`
+- `Education`
+- `Legal`
+- `Manufacturing`
+- `Customer Service`
+- `Construction`
+- `Supply Chain`
+- `Science`
+- `Research & Development`
+- `Administrative`
+- `Consulting`
+- `Real Estate`
+- `Media & Communications`
+- `Product Management`
+- `Design`
+
+## seniority (6)
+
+- `C-Team`
+- `VP`
+- `Director`
+- `Manager`
+- `Staff`
+- `Other`
+
+Aliases aceptados: C-Suite/C-Level/Executive→C-Team; Vice President/SVP/EVP→VP.
+
+## personas (73)
+
+- `CEO / Founder`
+- `CTO`
+- `CFO`
+- `CMO`
+- `COO`
+- `CRO`
+- `CIO`
+- `CHRO`
+- `VP Sales`
+- `VP Marketing`
+- `VP Engineering`
+- `VP Product`
+- `VP Operations`
+- `VP Finance`
+- `Director of Sales`
+- `Director of Marketing`
+- `Director of Engineering`
+- `Director of IT`
+- `Director of HR`
+- `Director of Operations`
+- `Head of Sales`
+- `Head of Marketing`
+- `Head of Growth`
+- `Head of Demand Generation`
+- `Head of RevOps`
+- `Sales Manager`
+- `Marketing Manager`
+- `Engineering Manager`
+- `Product Manager`
+- `Account Executive`
+- `SDR / BDR`
+- `DevOps`
+- `Data / Analytics`
+- `Security`
+- `Legal Counsel`
+- `Procurement`
+- `Customer Success`
+- `Support`
+- `Recruiter`
+- `Consultant`
+- `Investor`
+- `Board Member`
+- `Partner`
+- `Franchise Owner`
+- `Small Business Owner`
+- `E-commerce`
+- `Retail`
+- `Healthcare Provider`
+- `Educator`
+- `Real Estate Agent`
+- `Insurance Agent`
+- `Financial Advisor`
+- `Attorney`
+- `Architect`
+- `Designer`
+- `Content Creator`
+- `Influencer`
+- `Journalist`
+- `Researcher`
+- `Scientist`
+- `Manufacturing`
+- `Supply Chain`
+- `Logistics`
+- `Construction`
+- `Hospitality`
+- `Travel`
+- `Sports`
+- `Entertainment`
+- `Nonprofit Leader`
+- `Government`
+- `Military`
+- `Student`
+- `Other`
+
+## company_size (8)
+
+- `1 to 10`
+- `11 to 50`
+- `51 to 200`
+- `201 to 500`
+- `501 to 1000`
+- `1001 to 5000`
+- `5001 to 10000`
+- `10001+`
+
+## revenue (6)
+
+- `<$1M`
+- `$1M to <$10M`
+- `$10M to <$50M`
+- `$50M to <$100M`
+- `$100M to <$1B`
+- `$1B+`
+
+## entity_types (10)
+
+- `Public Company`
+- `Privately Held`
+- `Partnership`
+- `Self-Employed`
+- `Non Profit`
+- `Educational Institution`
+- `Government Agency`
+- `Self Owned`
+- `Sole Proprietorship`
+- `Nonprofit`
+
+## regions / continents / email_status
+
+- regions: NORAM, EMEA, APAC, LATAM
+- continents: North America, Europe, Asia, South America, Africa, Oceania, Antarctica
+- email_status: VALID, CATCH_ALL, INVALID
+
+## industries (515 — usar string exacto)
+
+- `IT Services and IT Consulting`
+- `Hospitals and Health Care`
+- `Financial Services`
+- `Higher Education`
+- `Retail`
+- `Software Development`
+- `Government Administration`
+- `Construction`
+- `Banking`
+- `Business Consulting and Services`
+- `Real Estate`
+- `Telecommunications`
+- `Insurance`
+- `Motor Vehicle Manufacturing`
+- `Education Administration Programs`
+- `Oil and Gas`
+- `Advertising Services`
+- `Hospitality`
+- `Non-profit Organizations`
+- `Technology; Information and Internet`
+- `Food and Beverage Services`
+- `Pharmaceutical Manufacturing`
+- `Manufacturing`
+- `Transportation; Logistics; Supply Chain and Storage`
+- `Restaurants`
+- `Appliances; Electrical; and Electronics Manufacturing`
+- `Primary and Secondary Education`
+- `Utilities`
+- `Wellness and Fitness Services`
+- `Staffing and Recruiting`
+- `Food and Beverage Manufacturing`
+- `Industrial Machinery Manufacturing`
+- `Airlines and Aviation`
+- `Information Technology and Services`
+- `Machinery Manufacturing`
+- `Mining`
+- `Law Practice`
+- `Chemical Manufacturing`
+- `Research Services`
+- `Retail Apparel and Fashion`
+- `Environmental Services`
+- `Wholesale`
+- `Accounting`
+- `Civil Engineering`
+- `Defense and Space Manufacturing`
+- `Truck Transportation`
+- `Medical Equipment Manufacturing`
+- `Entertainment Providers`
+- `Medical Practices`
+- `Facilities Services`
+- `Outsourcing and Offshoring Consulting`
+- `Consumer Services`
+- `Biotechnology Research`
+- `Human Resources Services`
+- `Travel Arrangements`
+- `Armed Forces`
+- `Wholesale Building Materials`
+- `Individual and Family Services`
+- `Civic and Social Organizations`
+- `Education`
+- `Professional Training and Coaching`
+- `Architecture and Planning`
+- `Professional Services`
+- `Spectator Sports`
+- `Security and Investigations`
+- `Education Management`
+- `Legal Services`
+- `Automation Machinery Manufacturing`
+- `Broadcast Media Production and Distribution`
+- `Aviation and Aerospace Component Manufacturing`
+- `Farming`
+- `Engineering Services`
+- `Mental Health Care`
+- `Design Services`
+- `Personal Care Product Manufacturing`
+- `Semiconductor Manufacturing`
+- `Events Services`
+- `Media Production`
+- `Textile Manufacturing`
+- `Marketing Services`
+- `E-Learning Providers`
+- `Computers and Electronics Manufacturing`
+- `Automotive`
+- `Information Services`
+- `Investment Management`
+- `International Trade and Development`
+- `Packaging and Containers Manufacturing`
+- `Book and Periodical Publishing`
+- `Non-profit Organization Management`
+- `Food and Beverages`
+- `Law Enforcement`
+- `Plastics Manufacturing`
+- `Maritime Transportation`
+- `Computer and Network Security`
+- `Retail Luxury Goods and Jewelry`
+- `Health; Wellness and Fitness`
+- `Retail Groceries`
+- `Furniture and Home Furnishings Manufacturing`
+- `Printing Services`
+- `Religious Institutions`
+- `Renewable Energy Semiconductor Manufacturing`
+- `Public Relations and Communications Services`
+- `Venture Capital and Private Equity Principals`
+- `Public Safety`
+- `Freight and Package Transportation`
+- `Mechanical Or Industrial Engineering`
+- `Rail Transportation`
+- `Computer Games`
+- `Computer Hardware Manufacturing`
+- `International Affairs`
+- `Food Production`
+- `Newspaper Publishing`
+- `Retail Office Equipment`
+- `Transportation/Trucking/Railroad`
+- `Paper and Forest Product Manufacturing`
+- `Consumer Goods`
+- `Executive Offices`
+- `Technology; Information and Media`
+- `Beverage Manufacturing`
+- `Musicians`
+- `Wholesale Import and Export`
+- `Research`
+- `Building Materials`
+- `Government Relations Services`
+- `Motor Vehicle Parts Manufacturing`
+- `Apparel and Fashion`
+- `Gambling Facilities and Casinos`
+- `Market Research`
+- `Performing Arts`
+- `Administration of Justice`
+- `Renewable Energy Power Generation`
+- `Entertainment`
+- `Museums; Historical Sites; and Zoos`
+- `Online Audio and Video Media`
+- `Health and Human Services`
+- `Leisure; Travel and Tourism`
+- `Services for Renewable Energy`
+- `Aviation and Aerospace`
+- `Sporting Goods Manufacturing`
+- `Photography`
+- `Medical Device`
+- `Veterinary Services`
+- `Human Resources`
+- `Recreational Facilities`
+- `Investment Banking`
+- `Graphic Design`
+- `Internet Publishing`
+- `Movies; Videos; and Sound`
+- `Public Policy Offices`
+- `Retail Motor Vehicles`
+- `Glass; Ceramics and Concrete Manufacturing`
+- `Internet Marketplace Platforms`
+- `Electric Power Generation`
+- `Design`
+- `Translation and Localization`
+- `Shipbuilding`
+- `Capital Markets`
+- `Political Organizations`
+- `Retail Pharmacies`
+- `Renewables and Environment`
+- `Outsourcing/Offshoring`
+- `Leasing Non-residential Real Estate`
+- `Biotechnology`
+- `Retail Art Supplies`
+- `Holding Companies`
+- `Philanthropic Fundraising Services`
+- `E-learning`
+- `Cosmetics`
+- `Urban Transit Services`
+- `Industrial Automation`
+- `Retail Health and Personal Care Products`
+- `Furniture`
+- `Think Tanks`
+- `Writing and Editing`
+- `Sporting Goods`
+- `Artists and Writers`
+- `Libraries`
+- `Computer Networking Products`
+- `IT System Custom Software Development`
+- `Public Health`
+- `Strategic Management Services`
+- `Animation and Post-production`
+- `Warehousing and Storage`
+- `Railroad Equipment Manufacturing`
+- `Medical and Diagnostic Laboratories`
+- `Renewable Energy Equipment Manufacturing`
+- `Packaging and Containers`
+- `Alternative Medicine`
+- `Ground Passenger Transportation`
+- `Business Supplies and Equipment`
+- `Consumer Electronics`
+- `Dairy Product Manufacturing`
+- `Electric Power Transmission; Control; and Distribution`
+- `Defense and Space`
+- `Maritime`
+- `Home Health Care Services`
+- `Wireless Services`
+- `Luxury Goods and Jewelry`
+- `Tobacco Manufacturing`
+- `Music`
+- `Energy Technology`
+- `Paint; Coating; and Adhesive Manufacturing`
+- `Fundraising`
+- `Sports Teams and Clubs`
+- `Solar Electric Power Generation`
+- `Vehicle Repair and Maintenance`
+- `Transportation Equipment Manufacturing`
+- `Food and Beverage Retail`
+- `Fabricated Metal Products`
+- `Online Media`
+- `Interior Design`
+- `Government Relations`
+- `Data Infrastructure and Analytics`
+- `Technical and Vocational Training`
+- `Building Construction`
+- `Electrical Equipment Manufacturing`
+- `Agriculture; Construction; Mining Machinery Manufacturing`
+- `Import and Export`
+- `Legislative Offices`
+- `Paper and Forest Products`
+- `Semiconductors`
+- `Wine and Spirits`
+- `Social Networking Platforms`
+- `Security Systems Services`
+- `Fisheries`
+- `Primary Metal Manufacturing`
+- `Real Estate Agents and Brokers`
+- `Computer Hardware`
+- `Apparel Manufacturing`
+- `Commercial and Industrial Machinery Maintenance`
+- `HVAC and Refrigeration Equipment Manufacturing`
+- `Media and Telecommunications`
+- `Wholesale Motor Vehicles and Parts`
+- `Commercial Real Estate`
+- `Insurance Agencies and Brokerages`
+- `Community Services`
+- `Mobile Gaming Apps`
+- `Wholesale Food and Beverage`
+- `Repair and Maintenance`
+- `Public Policy`
+- `Veterinary`
+- `Sports and Recreation Instruction`
+- `Blockchain Services`
+- `Agricultural Chemical Manufacturing`
+- `Blogs`
+- `Industry Associations`
+- `Space Research and Technology`
+- `Fine Art`
+- `Ranching`
+- `Oil; Gas; and Mining`
+- `Nanotechnology Research`
+- `IT System Data Services`
+- `Retail Furniture and Home Furnishings`
+- `Physical; Occupational and Speech Therapists`
+- `Arts and Crafts`
+- `Specialty Trade Contractors`
+- `Online and Mail Order Retail`
+- `Measuring and Control Instrument Manufacturing`
+- `Internet News`
+- `Hotels and Motels`
+- `Fire Protection`
+- `Program Development`
+- `Nuclear Electric Power Generation`
+- `Business Content`
+- `Dentists`
+- `Child Day Care Services`
+- `Nursing Homes and Residential Care Facilities`
+- `Personal Care Services`
+- `Book Publishing`
+- `Warehousing`
+- `Security Guards and Patrol Services`
+- `Business Intelligence Platforms`
+- `Equipment Rental Services`
+- `Professional Organizations`
+- `Operations Consulting`
+- `Landscaping Services`
+- `Philanthropy`
+- `Movies and Sound Recording`
+- `Office Furniture and Fixtures Manufacturing`
+- `Climate Technology Product Manufacturing`
+- `Wood Product Manufacturing`
+- `Dairy`
+- `Alternative Dispute Resolution`
+- `Retail Appliances; Electrical; and Electronic Equipment`
+- `Embedded Software Products`
+- `Language Schools`
+- `Commercial and Industrial Equipment Rental`
+- `Retail Gasoline`
+- `Farming; Ranching; Forestry`
+- `Metal Treatments`
+- `Robotics Engineering`
+- `Data Security Software Products`
+- `Glass Product Manufacturing`
+- `Animal Feed Manufacturing`
+- `Telephone Call Centers`
+- `Residential Building Construction`
+- `Housing and Community Development`
+- `Administrative and Support Services`
+- `Computer Networking`
+- `Electric Lighting Equipment Manufacturing`
+- `Wholesale Chemical and Allied Products`
+- `Mobile Computing Software Products`
+- `Animation`
+- `Pet Services`
+- `Wholesale Appliances; Electrical; and Electronics`
+- `Museums`
+- `Hospitals`
+- `Courts of Law`
+- `Footwear Manufacturing`
+- `Radio and Television Broadcasting`
+- `Golf Courses and Country Clubs`
+- `Community Development and Urban Planning`
+- `Wholesale Drugs and Sundries`
+- `School and Employee Bus Services`
+- `Wholesale Metals and Minerals`
+- `Waste Treatment and Disposal`
+- `Wineries`
+- `Janitorial Services`
+- `Highway; Street; and Bridge Construction`
+- `Commercial and Service Industry Machinery Manufacturing`
+- `Wholesale Machinery`
+- `Leasing Residential Real Estate`
+- `Plastics and Rubber Product Manufacturing`
+- `Architectural and Structural Metal Manufacturing`
+- `Water Supply and Irrigation Systems`
+- `Transportation Programs`
+- `Executive Search Services`
+- `Horticulture`
+- `Wind Electric Power Generation`
+- `Wholesale Petroleum and Petroleum Products`
+- `Services for the Elderly and Disabled`
+- `Military and International Affairs`
+- `Fashion Accessories Manufacturing`
+- `Wholesale Alcoholic Beverages`
+- `IT System Design Services`
+- `Utility System Construction`
+- `Waste Collection`
+- `Retail Building Materials and Garden Equipment`
+- `Engines and Power Transmission Equipment Manufacturing`
+- `Surveying and Mapping Services`
+- `Real Estate and Equipment Rental Services`
+- `Metalworking Machinery Manufacturing`
+- `Investment Advice`
+- `Accommodation and Food Services`
+- `Digital Accessibility Services`
+- `Conservation Programs`
+- `Building Equipment Contractors`
+- `Utilities Administration`
+- `Wholesale Luxury Goods and Jewelry`
+- `Metal Ore Mining`
+- `Caterers`
+- `Construction Hardware Manufacturing`
+- `Wholesale Hardware; Plumbing; Heating Equipment`
+- `Building Structure and Exterior Contractors`
+- `Chemical Raw Materials Manufacturing`
+- `IT System Training and Support`
+- `Temporary Help Services`
+- `Retail Art Dealers`
+- `Desktop Computing Software Products`
+- `Periodical Publishing`
+- `Tobacco`
+- `Retail Office Supplies and Gifts`
+- `Forestry and Logging`
+- `Building Finishing Contractors`
+- `Economic Programs`
+- `Rubber Products Manufacturing`
+- `Baked Goods Manufacturing`
+- `Meat Products Manufacturing`
+- `Water; Waste; Steam; and Air Conditioning Services`
+- `Physicians`
+- `Insurance and Employee Benefit Funds`
+- `Amusement Parks and Arcades`
+- `IT System Operations and Maintenance`
+- `Leather Product Manufacturing`
+- `Communications Equipment Manufacturing`
+- `Electronic and Precision Equipment Maintenance`
+- `Air; Water; and Waste Program Management`
+- `Turned Products and Fastener Manufacturing`
+- `Coal Mining`
+- `Climate Data and Analytics`
+- `Shuttles and Special Needs Transportation Services`
+- `Taxi and Limousine Services`
+- `Audio and Video Equipment Manufacturing`
+- `Natural Gas Distribution`
+- `Fine Arts Schools`
+- `Emergency and Relief Services`
+- `Household Appliance Manufacturing`
+- `Wholesale Recyclable Materials`
+- `Office Administration`
+- `Wholesale Furniture and Home Furnishings`
+- `Accessible Architecture and Design`
+- `Insurance Carriers`
+- `Sightseeing Transportation`
+- `Telecommunications Carriers`
+- `Ambulance Services`
+- `Zoos and Botanical Gardens`
+- `Wholesale Computer Equipment`
+- `Mobile Food Services`
+- `Satellite Telecommunications`
+- `Vocational Rehabilitation Services`
+- `Laundry and Drycleaning Services`
+- `Funds and Trusts`
+- `Nonresidential Building Construction`
+- `Sugar and Confectionery Product Manufacturing`
+- `Soap and Cleaning Product Manufacturing`
+- `Breweries`
+- `Bars; Taverns; and Nightclubs`
+- `Hydroelectric Power Generation`
+- `Optometrists`
+- `IT System Testing and Evaluation`
+- `Wholesale Apparel and Sewing Supplies`
+- `Loan Brokers`
+- `Wholesale Raw Farm Products`
+- `Theater Companies`
+- `Robot Manufacturing`
+- `Performing Arts and Spectator Sports`
+- `Collection Agencies`
+- `Outpatient Care Centers`
+- `Housing Programs`
+- `Postal Services`
+- `Household Services`
+- `Fossil Fuel Electric Power Generation`
+- `Seafood Product Manufacturing`
+- `Consumer Goods Rental`
+- `Wholesale Paper Products`
+- `Retail Books and Printed News`
+- `Fuel Cell Manufacturing`
+- `Sound Recording`
+- `Retail Florists`
+- `Environmental Quality Programs`
+- `Skiing Facilities`
+- `Household and Institutional Furniture Manufacturing`
+- `Trusts and Estates`
+- `Retail Recyclable Materials and Used Merchandise`
+- `Interurban and Rural Bus Services`
+- `Retail Musical Instruments`
+- `Claims Adjusting; Actuarial Services`
+- `Chiropractors`
+- `Public Assistance Programs`
+- `Cosmetology and Barber Schools`
+- `Biomass Electric Power Generation`
+- `Steam and Air-Conditioning Supply`
+- `Boilers; Tanks; and Shipping Container Manufacturing`
+- `Dance Companies`
+- `Flight Training`
+- `Mattress and Blinds Manufacturing`
+- `Distilleries`
+- `Spring and Wire Product Manufacturing`
+- `Pension Funds`
+- `Bed-and-Breakfasts; Hostels; Homestays`
+- `Securities and Commodity Exchanges`
+- `Geothermal Electric Power Generation`
+- `Pipeline Transportation`
+- `Clay and Refractory Products Manufacturing`
+- `Wholesale Footwear`
+- `Historical Sites`
+- `Savings Institutions`
+- `Abrasives and Nonmetallic Minerals Manufacturing`
+- `Correctional Institutions`
+- `Personal and Laundry Services`
+- `Oil and Coal Product Manufacturing`
+- `Credit Intermediation`
+- `Natural Gas Extraction`
+- `Oil Extraction`
+- `Nonmetallic Mineral Mining`
+- `Metal Valve; Ball; and Roller Manufacturing`
+- `Smart Meter Manufacturing`
+- `Alternative Fuel Vehicle Manufacturing`
+- `Fruit and Vegetable Preserves Manufacturing`
+- `Funeral Services`
+- `Accessible Hardware Manufacturing`
+- `IT System Installation and Disposal`
+- `Regenerative Design`
+- `Cable and Satellite Programming`
+- `Ranching and Fisheries`
+- `Sheet Music Publishing`
+- `Subdivision of Land`
+- `Death Care Services`
+- `Wholesale Photography Equipment and Supplies`
+- `Reupholstery and Furniture Repair`
+- `Cutlery and Handtool Manufacturing`
+- `Racetracks`
+- `Women's Handbag Manufacturing`
+- `Lime and Gypsum Products Manufacturing`
+- `Magnetic and Optical Media Manufacturing`
+- `Artificial Rubber and Synthetic Fiber Manufacturing`
+- `Footwear and Leather Goods Repair`
+- `Family Planning Centers`
+- `Secretarial Schools`
+- `Circuses and Magic Shows`
+- `Other`
+- `Hospital and Health Care`
+- `Electrical and Electronic Manufacturing`
+- `Machinery`
+- `Computer Software`
+- `Chemicals`
+- `Civic and Social Organization`
+- `Internet`
+- `Sports`
+- `Marketing and Advertising`
+- `Logistics and Supply Chain`
+- `Management Consulting`
+- `Medical Practice`
+- `Political Organization`
+- `Textiles`
+- `Supermarkets`
+- `Broadcast Media`
+- `Printing`
+- `Mining and Metals`
+- `Public Relations and Communications`
+- `Newspapers`
+- `Plastics`
+- `Executive Office`
+- `Publishing`
+- `Oil and Energy`
+
+## headquarters_countries (270)
+
+United States, India, United Kingdom, Brazil, France, Canada, Germany, Spain, Italy, Netherlands, Australia, Indonesia, Türkiye, China, Mexico, United Arab Emirates, South Africa, Colombia, Switzerland, Israel, Sweden, Belgium, Singapore, Argentina, Saudi Arabia, Pakistan, Morocco, Chile, Denmark, Panama, Philippines, Poland, Egypt, Peru, Malaysia, Georgia, Portugal, Mongolia, Norway, Nigeria, Vatican, Finland, Japan, Bangladesh, Ireland, New Caledonia, Hong Kong, Gabon, Tunisia, Moldova, New Zealand, South Korea, Austria, Iran, Macau, Kenya, Vietnam, Czechia, Romania, Taiwan, Azerbaijan, Russia, Ecuador, Thailand, Greece, Luxembourg, Qatar, Sri Lanka, Ukraine, Kuwait, Serbia, Hungary, Algeria, Jordan, Ghana, Venezuela, Seychelles, Uruguay, Costa Rica, Guatemala, Dominican Republic, Lebanon, Oman, Bulgaria, Puerto Rico, Albania, Botswana, Croatia, Cayman Islands, Lithuania, Slovakia, Nepal, Cyprus, Malta, Côte D'Ivoire, Laos, Bolivia, Uganda, Ethiopia, Madagascar, Bahrain, Slovenia, Niger, Senegal, Paraguay, Estonia, Iraq, Kazakhstan, Cambodia, Latvia, Zimbabwe, Tanzania, Angola, El Salvador, Namibia, Cameroon, Mauritius, Sudan, Myanmar, Armenia, Zambia, Mozambique, Bermuda, Belarus, Honduras, Jamaica, Tonga, Afghanistan, North Macedonia, Nicaragua, Dr Congo, Montenegro, Iceland, Bahamas, Trinidad And Tobago, Uzbekistan, Maldives, Papua New Guinea, Montserrat, Monaco, Bosnia And Herzegovina, Rwanda, Marshall Islands, Bosnia and Herzegovina, Liechtenstein, Jersey, Palestine, Togo, Syria, Libya, Kosovo, Malawi, Fiji, Benin, Réunion, Cuba, Czech Republic, Guinea, Barbados, Brunei Darussalam, Burkina Faso, Gibraltar, Congo Republic, Somalia, Andorra, Eswatini, United States Virgin Islands, Yemen, Mali, Sierra Leone, British Virgin Islands, Belize, Martinique, Guadeloupe, Isle Of Man, Lesotho, Haiti, Suriname, Guernsey, Kyrgyzstan, French Polynesia, Liberia, Antigua and Barbuda, Guyana, Gambia, St. Lucia, San Marino, Aruba, Mauritania, Reunion, Northern Mariana Islands, DR Congo, Curacao, Djibouti, Bhutan, Tuvalu, Guam, Faroe Islands, South Sudan, Greenland, Grenada, Cabo Verde, Curaçao, Chad, St. Vincent And The Grenadines, St. Helena, St. Barths, Burundi, Heard and McDonald Islands, Tajikistan, French Guiana, St. Vincent and the Grenadines, Antigua And Barbuda, Wallis and Futuna Islands, Saint-Martin, Antarctica, Vanuatu, Isle of Man, Åland Islands, American Samoa, Sint Maarten, Comoros, St. Kitts And Nevis, Mayotte, Anguilla, Turks And Caicos Islands, Timor-Leste, Equatorial Guinea, Trinidad and Tobago, Turkmenistan, Pitcairn, Micronesia, Fed. Sts., Eritrea, Solomon Islands, Cook Islands, French Southern Territories, Cote d'Ivoire, Bouvet Island, Dominica, Cote D'Ivoire, Aland Islands, Samoa, Central African Republic, Bonaire, Saint Eustatius and Saba, Guinea-Bissau, Palau, Faeroe Islands, Kiribati, Sao Tome and Principe, United States Minor Outlying Islands, Sao Tome And Principe, North Korea, Turks and Caicos Islands, St. Kitts and Nevis, British Indian Ocean Territory, Svalbard and Jan Mayen Islands, Kyrgyz Republic, Falkland Islands, Western Sahara, Côte d'Ivoire, Niue, Nauru, South Georgia and South Sandwich Is., Cocos (Keeling) Islands, St. Pierre And Miquelon, Norfolk Island, Tokelau, St. Pierre and Miquelon, Wallis And Futuna Islands, Christmas Island

@@ -1,6 +1,24 @@
 # Universo autotransporte MX — enumeración AI Ark (2026-07-13)
 
-**Estado: COMPLETO — enumeración + buckets de equipo comercial fusionados (batch gratis GetLeads, 9,238 conteos, $0)**
+**Estado: FASE 2 — universo ampliado a 6 lentes tras revisión de las 148 industrias; buckets de los dominios nuevos en proceso.**
+
+## Fase 2 (mismo día): las lentes que faltaban
+Revisión manual de las 148 industrias de AI Ark + NAICS del ecosistema. Lentes agregadas
+(con exclusiones encadenadas para no pagar traslapes dos veces):
+
+| Lente | Empresas (únicas tras dedupe) |
+|---|---|
+| `freight and package transportation` | 2,411 |
+| `transportation, logistics, supply chain and storage` | 878 |
+| `warehousing and storage` | 235 |
+| NAICS 488 (forwarding/apoyo) + 492 (paquetería) + 493 (almacenes), sin 484 | 1,949 |
+
+**Universo total: 11,671 únicas · 11,272 MX · 8,201 con dominio.** Costo fase 2: 588.5 créditos.
+
+Evaluadas y EXCLUIDAS a propósito (van en la etapa de mayoreo/comex, no en transporte):
+`wholesale import and export` (335 MX 2–700) e `international trade and development` (1,080) —
+traders y aduanales, no transportistas. `maritime transportation` y `airlines and aviation`
+fuera por no ser terrestre; mudanzas ya cubiertas por NAICS 484210.
 
 ## Distribución de buckets (México con dominio, 4,661 empresas)
 | sales_bucket | Empresas | % |

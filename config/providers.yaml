@@ -53,8 +53,10 @@ ocean:
   credit_budget:
     max_per_run: 800              # tope duro de créditos por corrida — el skill NUNCA lo excede sin aprobación
     reserve: 500                  # nunca dejar el saldo debajo de esto
-    # Economía: 1 crédito por resultado de búsqueda devuelto + 1 crédito por
-    # email verificado revelado. Lista de 300 con emails ≈ hasta 600 créditos.
+    # Economía MEDIDA (2026-07-14): 0.2 créditos por resultado de company search
+    # (1,120 lookalikes = 226 créditos, creditsUsed confirmado en el response).
+    # Email revelado: 1 crédito (por verificar en corrida real). El response de
+    # search trae `total` — una muestra de size 10 (2 créditos) revela el universo.
   lookalike:
     max_domains: 10               # seeds por búsqueda lookalike
     mode: precise                 # precise = similitud semántica de producto/servicio; broad = misma industria

@@ -85,5 +85,7 @@ Costo típico por empresa rescatada: **2–5 créditos** (escalera) hasta **~0.5
 ## Artefacto
 Normaliza al `csv_schema` (source=`getleads`) → `lists/<workspace>/<YYYY-MM-DD>-<slug>.csv` + `-REPORT.md`: filtros JSON reproducibles por corrida, tabla de conteos por capa (A, B, unión), traslapes, excludes aplicados, créditos gastados vs estimados, saldo final, y qué se mandó a AI Ark para cierre de emails. Estado **aprobado**.
 
+**Regla dura (2026-07-14): TODA lista se upserta a Supabase `list_companies` con su nicho** — `python scripts/lists_to_supabase.py --csv <archivo> --niche <slug-del-nicho> --source getleads`. El CSV local es artefacto de trabajo (y está gitignored); Supabase es el registro durable.
+
 ## Al terminar (contrato de memoria)
 - Registra en `LEARNINGS.md`: diccionario de títulos que sobrevivió (por sector/geo), falsos positivos nuevos, % cobertura de email VALID observado por geo, costos reales vs estimados, y campos de `where_sql` que funcionaron.

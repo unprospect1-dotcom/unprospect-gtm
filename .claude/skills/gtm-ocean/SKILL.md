@@ -66,5 +66,7 @@ Pagina con `searchAfter` hasta el N aprobado. Junta los person ids y corre `reve
 ### 7. Artefacto
 Normaliza al `csv_schema` (source=`ocean`, source_id=person id) → `lists/<workspace>/<YYYY-MM-DD>-<slug>.csv` + `-REPORT.md`: seeds usados, modo, filtros JSON reproducibles, totales, créditos gastados vs estimados, saldo final, estado **aprobado**. Los seeds y el resultado también van a `SEGMENTS.md` si definieron un segmento nuevo.
 
+**Regla dura (2026-07-14): TODA lista se upserta a Supabase `list_companies` con su nicho** — `python scripts/lists_to_supabase.py --csv <archivo> --niche <slug-del-nicho> --source ocean`. El CSV local es artefacto de trabajo (gitignored); Supabase es el registro durable.
+
 ## Al terminar (contrato de memoria)
 - Registra en `LEARNINGS.md`: qué seeds produjeron lookalikes limpios vs ruidosos, precise vs broad por caso, nombres de campos del body corregidos en corridas reales, y costos reales vs estimados.

@@ -43,5 +43,7 @@ Reporta créditos disponibles + tamaño del job y **confirma una última vez**. 
 ### 6. Artefacto
 Normaliza al `csv_schema` de la config (source=`aiark`) y escribe `lists/<workspace>/<YYYY-MM-DD>-<slug>.csv` + `-REPORT.md` con: filtros finales (JSON reproducible), totales, % verificados, excluidos por dedupe, créditos gastados, y estado **aprobado**. Este CSV es lo que consumen `gtm-check-contact`/`gtm-personalize`/launch.
 
+**Regla dura (2026-07-14): TODA lista se upserta a Supabase `list_companies` con su nicho** — `python scripts/lists_to_supabase.py --csv <archivo> --niche <slug-del-nicho> --source aiark`. El CSV local es artefacto de trabajo (gitignored); Supabase es el registro durable.
+
 ## Al terminar (contrato de memoria)
 - Registra en `LEARNINGS.md`: qué filtros/modos dieron señal limpia, correcciones del usuario textuales (ej. "en logística MX el título real es 'Gerente de Tráfico', no 'Operations Manager'"), y sorpresas de la API.

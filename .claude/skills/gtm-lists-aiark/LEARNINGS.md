@@ -17,9 +17,16 @@
 - [2026-07-13] Saldo: `GET /payments/credits` (el `/credit` que traía el script daba 401). Auth: header `X-TOKEN` (Bearer NO funciona pese a lo que dice first-steps de sus docs). Env var real: `AI_ARK_API`.
 - [2026-07-13] People search `POST /v1/people` verificado en vivo; exige `size >= 1` (size=0 da 400).
 
+## Reglas del usuario (correcciones textuales)
+
+- [2026-07-13] (confirmado, regla del usuario) AI Ark trae DOS conteos de empleados por empresa: `summary.staff.range` (bracket AUTOREPORTADO de LinkedIn) y `summary.staff.total` (perfiles asociados). **En transporte/manufactura usar el autoreportado** (mucho empleado sin LinkedIn); **en SaaS/digital confiar más en el conteo de perfiles**. Ojo: `staff.total` a veces es basura (empresa de 2–10 con total=72,376) — validar contra el conteo de contactos por dominio de GetLeads (gratis).
+- [2026-07-13] (confirmado) La categoría/industria es autoreportada y NO es confiable sola: empresa etiquetada "truck transportation" resultó vendedora de insumos/mantenimiento (belum.com.mx). El universo de una categoría se arma con UNIÓN DE LENTES (industria ∪ NAICS ∪ productAndServices) y se verifica con gtm-web-crawler + gtm-classify-b2b ($0) antes de gastar en personas.
+
 ## Conteos de referencia
 
 - [2026-07-13] Gap de bases vs GetLeads (3 transportistas MX): AI Ark lista ~40-60% de la gente que GetLeads (Estafeta 2,722 vs 4,640; Castores 349 vs 544; Tresguerras 248 vs 565) — pero su email finding en tiempo real compensa donde GetLeads solo tiene ~6% VALID en MX. hubspot.com master_sales: 3,179 (vs GetLeads job_function Sales: 1,636 — taxonomías distintas, ninguna es superset).
+- [2026-07-13] Universo autotransporte MX por lente (sondeos 0.1 c/u): industria "truck transportation" 7,649; NAICS 484xxx 3,880; intersección solo 1,423 → unión ≈ 10,106 (los lentes se traslapan POCO: ninguno solo basta). Sin enterprise (employeeSize 1–999): 5,708 por industria. productAndServices SMART "transporte de carga": 300 (demasiado angosto para enumerar; útil como lente de precisión). Comercio al por mayor (wholesale WORD, sin enterprise): 9,706. Ancla del mundo real (SICT 2024): 205,815 permisionarios, 166k hombre-camión no alcanzable por email, ~38.4k pequeñas+medianas formales → LinkedIn ve ~25% de ese universo.
+- [2026-07-13] `employeeSize` se filtra como `{"type":"RANGE","range":[{"start":N,"end":M}]}` — filtra sobre el bracket autoreportado (el correcto para transporte según regla del usuario).
 
 ## Entradas
 

@@ -14,6 +14,12 @@ _(paths verificados por sondeo 2026-07: /v3/search/companies, /v3/search/people,
 /v2/reveal/emails, /v2/reveal/phones, /v2/warmup/companies, /v2/enrich/company,
 /v2/credits/balance — registrar aquí nombres de campos del body al confirmarlos)_
 
+## Reglas de calidad del lookalike (medidas con crawl real)
+
+- [2026-07-14] (confirmado, n=70 sitios crawleados) **El score `relevance` de Ocean ES la línea de corte: A ≈ 77-83% precisión, B ≈ 5-10%, C ≈ basura.** En instaladores solares MX (seeds puros): los A son instaladores/solar-core reales; los B derivan a "sector eléctrico/energía en general" (instaladores eléctricos, UVIEs, monitoreo, UPS — hasta Toshiba corporate); los C son colados y dominios parked. **Cortar en A por default.** El drift de B no es culpa de los seeds — es el radio semántico del modo precise; B puede reciclarse como universo de OTRO segmento (servicios eléctricos/eficiencia energética).
+- [2026-07-14] (señal) Costo real por lead VERIFICADO (lookalike + crawl + evaluación): 226 cr / ~390 instaladores reales ≈ 0.6 créditos por empresa confirmada con sitio.
+- [2026-07-14] (señal) Artefactos de crawl a vigilar al evaluar calidad: texto de error del proxy capturado como contenido (grupoenergiamexico.com) y sitios hackeados con spam (altihp.com con texto de casino) — no son colados del lookalike, son ruido del crawl.
+
 ## Seeds que funcionaron / no funcionaron
 
 - [2026-07-13] (señal) Transporte refrigerado MX — 10 seeds construidos con el modo SEEDS (universo AI Ark + clean_text del crawler + evaluación LLM), warmup OK los 10: carriers frioexpress.com, cabalo.mx, fwdlogistica.com, gpmetlogistics.com, transportesgmx.com, alsur.com.mx, corporativoenciso.com; cadena de frío/3PL frigorificosarcosa.com, dickalogistics.com, accessa.com.mx. Falsos positivos típicos del nicho detectados: aseguradoras de carga, fabricantes de carrocerías refrigeradas, retail de congelados, aduanales genéricas. (Pendiente: correr el lookalike y calificar la limpieza.)

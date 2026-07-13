@@ -1,6 +1,17 @@
 # Universo autotransporte MX — enumeración AI Ark (2026-07-13)
 
-**Estado: FASE 2 — universo ampliado a 6 lentes tras revisión de las 148 industrias; buckets de los dominios nuevos en proceso.**
+**Estado: UNIVERSO COMPLETO CON BUCKETS — 6 lentes, 148 industrias auditadas, 8,125 dominios con conteo de equipo comercial ($0). Crawler corriendo (persiste a `site_crawls` en Supabase).**
+
+## Distribución FINAL de buckets (México con dominio, 8,201 empresas)
+| sales_bucket | Empresas | % |
+|---|---|---|
+| 0-sin-señal | 5,501 | 67% |
+| 1-2 | 1,595 | 19% |
+| 3-10 | 862 | 10% |
+| 11-50 | 220 | 2% |
+| 50+ | 23 | <1% |
+
+**2,348 empresas NUEVAS (no en Supabase) con equipo comercial de 1–50** — el target directo.
 
 ## Fase 2 (mismo día): las lentes que faltaban
 Revisión manual de las 148 industrias de AI Ark + NAICS del ecosistema. Lentes agregadas

@@ -1,6 +1,8 @@
 # Plan: skills de list building para GetLeads / AI Ark / Ocean
 
 > Investigación hecha el 2026-07-11. Costo de toda la investigación: **0.5 créditos de AI Ark, 0 de Ocean, 0 de GetLeads** (todo lo demás fue con endpoints gratuitos).
+>
+> **Estado 2026-07-13: Fases A, B y C completadas** — skill `gtm-getleads` creada (con la receta DM-unión validada en vivo sobre transporte MX), `providers.yaml` y scripts corregidos, learnings registrados en las 3 skills. Gasto acumulado de validación: 2.0 créditos AI Ark, 0 GetLeads, 0 Ocean. Falta Fase D (estreno con lista real del usuario).
 
 ## 1. Lo que verifiqué en vivo (las 3 keys funcionan)
 

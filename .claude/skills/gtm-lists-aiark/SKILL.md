@@ -13,11 +13,12 @@ argument-hint: <workspace> [segmento | "lookalikes de X, Y" | descripción de la
 
 ## Referencia técnica de la API
 - Auth: header `X-TOKEN`. Base: `aiark.base_url`. Rate limit: 5 rps / 300 rpm (respeta `rate_limit_rps`), 429 al excederse.
+- **⚠️ El search NO es gratis (verificado 2026-07-13): cobra 0.5 créditos por perfil devuelto.** Sondea totales con `size:1` (`totalElements` sale completo) y nunca pidas páginas que no vas a usar. Para conteos masivos (sizing, tamaño de deptos) usa `gtm-getleads` — sus counts cuestan 0.
 - `POST /companies` — búsqueda de empresas. **`lookalikeDomains` (máx 5 dominios) encuentra similares nativamente** — el camino directo cuando el usuario trae empresas de referencia. Filtros `account.*`: industries, location, employeeSize (RANGE), revenue, technologies (SMART/WORD/STRICT), naics, keyword, funding; y `employee.title/seniority/departmentAndFunction` para exigir que tengan cierto rol.
 - `POST /people` — búsqueda de personas. `account.*` (filtros de SU empresa) + `contact.*`: experience (títulos con modos SMART/WORD/STRICT), seniority (founder/c_suite/vp/director/manager/senior...), location, departmentAndFunction, keyword. Paginación `page`/`size` (máx 100), responde `totalElements` y `trackId`.
 - `POST /people/export` — export batch CON email (verificación real-time por BounceBan, SMTP y CATCH_ALL). Async: `size` hasta 10,000, responde `trackId`; resultados por polling a los endpoints de statistics/results por trackId. Refund automático de fallos en ~10h.
 - `POST /lists` — listas de exclusión (`people_id`/`company_id`, máx 10,000 items, **expiran a las 24h** — se recrean por corrida). Se referencian en búsquedas vía `lists.*.exclude`.
-- `GET` fetch-credit — saldo de créditos. Consúltalo ANTES de un export grande y repórtalo.
+- `GET /payments/credits` — saldo de créditos (gratis; path verificado 2026-07-13). Consúltalo ANTES de un export grande y repórtalo.
 - Sintaxis de filtros: `{any: {include: [...], exclude: [...]}}` = OR; `all` = AND; modos SMART/WORD/STRICT en campos de texto.
 - Ejecuta llamadas con `scripts/aiark.py` (subcomandos: `credit`, `companies`, `people`, `export`, `results`, `exclude-list`).
 

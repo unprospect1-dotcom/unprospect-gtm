@@ -20,7 +20,7 @@ Uso:
   python scripts/ocean.py reveal-emails --ids-file person_ids.txt [--webhook URL]
   python scripts/ocean.py enrich-company --domain empresa.com
 
-Auth: header x-api-token con $OCEAN_KEY (cambiable con --key-env).
+Auth: header x-api-token con $OCEAN_API (cambiable con --key-env).
 Rate limit self-serve: 60 req/min y 1,000 req/día — el script duerme 1s entre llamadas.
 El body de search: {"size": N, "searchAfter": cursor, "companiesFilters": {...},
 "peopleFilters": {...}} — el JSON de --filters se mezcla tal cual.
@@ -63,7 +63,7 @@ def main():
     ap.add_argument("cmd", choices=["balance", "warmup", "companies", "people",
                                     "reveal-emails", "enrich-company"])
     ap.add_argument("--base-url", default=DEFAULT_BASE)
-    ap.add_argument("--key-env", default="OCEAN_KEY")
+    ap.add_argument("--key-env", default="OCEAN_API")
     ap.add_argument("--filters", help="JSON con companiesFilters/peopleFilters")
     ap.add_argument("--size", type=int, default=10)
     ap.add_argument("--search-after", help="cursor de paginación de la respuesta previa")

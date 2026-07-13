@@ -12,13 +12,13 @@ Uso:
   python scripts/aiark.py export-results --track-id <uuid> --page 0 --size 100
   python scripts/aiark.py exclude-list --type company_id --values-file domains.txt [--list-id <uuid>]
 
-Auth: header X-TOKEN con el valor de $AIARK_KEY (cambiable con --key-env).
+Auth: header X-TOKEN con el valor de $AI_ARK_API (cambiable con --key-env).
 Salida: JSON crudo a stdout (el skill lo interpreta).
 
-NOTA: escrito contra docs.ai-ark.com (2026-07). Los paths de credit/stats/results
-no están 100% confirmados en los docs públicos — si un subcomando da 404, usar
---path para ajustar el endpoint y registrar el path correcto en el LEARNINGS
-del skill.
+OJO (verificado 2026-07-13): el search cobra 0.5 créditos POR PERFIL DEVUELTO —
+sondear totales con --size 1 y nunca pedir páginas que no se van a usar.
+Paths de credit y people search verificados en vivo; stats/results de export
+siguen sin confirmar — si dan 404, usar --path y registrar en LEARNINGS.
 """
 
 import argparse
@@ -55,7 +55,7 @@ def main():
     ap.add_argument("cmd", choices=["credit", "companies", "people", "export",
                                     "export-stats", "export-results", "exclude-list"])
     ap.add_argument("--base-url", default=DEFAULT_BASE)
-    ap.add_argument("--key-env", default="AIARK_KEY")
+    ap.add_argument("--key-env", default="AI_ARK_API")
     ap.add_argument("--filters", help="archivo JSON con account/contact/lists/lookalikeDomains")
     ap.add_argument("--page", type=int, default=0)
     ap.add_argument("--size", type=int, default=25)
@@ -70,7 +70,8 @@ def main():
     filters = json.load(open(a.filters)) if a.filters else {}
 
     if a.cmd == "credit":
-        out = call("GET", a.base_url + (a.path or "/credit"), key)
+        # path verificado 2026-07-13 (/credit da 401)
+        out = call("GET", a.base_url + (a.path or "/payments/credits"), key)
     elif a.cmd in ("companies", "people"):
         body = {"page": a.page, "size": a.size, **filters}
         out = call("POST", a.base_url + (a.path or f"/{a.cmd}"), key, body)

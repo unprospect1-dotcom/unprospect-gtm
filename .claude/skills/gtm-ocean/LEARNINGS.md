@@ -20,7 +20,7 @@ _(por workspace: qué dominios seed dieron lookalikes limpios)_
 
 ## Entradas
 
-_(sin entradas todavía)_
+- [2026-07-13] (confirmado) `GET /v2/credits/balance` verificado en vivo con env var `OCEAN_API`: saldo {oneTime: 4368.8, recurrent: 300.0}, dailyLimitRateLeft 1000. Ocean queda reservado para lookalikes semánticos — para conteos y selección usar `gtm-getleads` (gratis) y para emails `gtm-lists-aiark`.
 
 ## Archivo
 

@@ -11,10 +11,14 @@ defaults:
     recontact_after_days: 90      # antes de esto un lead contactado se excluye siempre
 
 aiark:
-  env_key: AIARK_KEY              # nombre de la env var con el API key (header X-TOKEN)
+  env_key: AI_ARK_API             # nombre de la env var con el API key (header X-TOKEN)
   base_url: https://api.ai-ark.com/api/developer-portal/v1
   rate_limit_rps: 4               # el límite real es 5 rps / 300 rpm — dejamos margen
   page_size: 100                  # máximo por página en search
+  # OJO (verificado 2026-07-13): el search NO es gratis — cobra 0.5 créditos por
+  # perfil devuelto. Sondear totales con size:1 y nunca paginar resultados que
+  # no se van a usar. Para conteos masivos usar GetLeads count (gratis).
+  # Saldo: GET /payments/credits (path verificado; /credit da 401).
   export:
     max_size: 10000               # máximo por job de export con email
     verified_only: true           # true = solo SMTP verificado; false = incluir CATCH_ALL
@@ -42,7 +46,7 @@ prospeo:
     # re-enriquecer el mismo lead es gratis por 90 días.
 
 ocean:
-  env_key: OCEAN_KEY              # nombre de la env var con el API key (header x-api-token)
+  env_key: OCEAN_API              # nombre de la env var con el API key (header x-api-token)
   base_url: https://api.ocean.io  # search vive en /v3, reveal/warmup/enrich/credits en /v2
   rate_limit_rpm: 60              # límite self-serve: 60 req/min y 1,000 req/día
   daily_request_limit: 1000
@@ -61,6 +65,25 @@ ocean:
   reveal:
     batch: true                   # reveal por lote de person ids; async, 1 crédito por email verificado
 
+getleads:
+  env_key: GETLEADS_API           # nombre de la env var con el API key (Authorization: Bearer glb_live_…)
+  base_url: https://app.getleads.io/api/v1
+  rate_limit_rpm: 100             # 100 req/min global; 429 al excederse
+  credit_budget:
+    max_per_run: 1000             # tope duro de créditos por corrida sin aprobación
+    reserve: 1000                 # nunca dejar el saldo debajo de esto
+    # Economía (verificada 2026-07-13): 1 crédito por registro devuelto /
+    # ítem exitoso de enrich; 0 si no hay match. GRATIS: count, filter-values,
+    # health. No hay endpoint de saldo — creditsRemaining viene en los counts.
+  search:
+    max_limit: 50000              # máximo por request en search/export
+    default_sample: 25            # muestra de aprobación (= defaults.sample_size)
+    max_per_company: 2            # default para estructura por empresa en exports
+  export:
+    poll_seconds: 20              # polling del export asíncrono (CSV en S3, expira 24h)
+  enrich:
+    batch_size: 100               # máximo por request en enrich/*
+
 # Columnas estándar del CSV de salida — el contrato con gtm-check-contact,
 # gtm-personalize y el upload a Instantly. Todo proveedor mapea a esto.
 csv_schema:
@@ -77,5 +100,5 @@ csv_schema:
   - company_headcount
   - company_location
   - email_status        # VERIFIED | CATCH_ALL | UNKNOWN
-  - source              # aiark | prospeo | user
+  - source              # aiark | prospeo | ocean | getleads | user
   - source_id           # id del proveedor para re-consultas

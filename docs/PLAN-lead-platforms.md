@@ -78,7 +78,7 @@ Correr el modo "contar" sobre tu set de empresas: gratis en GetLeads + cross-che
 
 El flujo NO verifica antes de enumerar — el web scraping propio ES la verificación y la segmentación:
 
-1. **Enumerar empresas** en AI Ark por unión de lentes (industria ∪ NAICS, sin enterprise = employeeSize autoreportado 1–999 por default). 0.1 créditos/empresa. La respuesta ya trae dominio, staff.range (autoreportado), NAICS y descripción.
+1. **Enumerar empresas** en AI Ark por unión de lentes (industria ∪ NAICS). 0.1 créditos/empresa. Corte de tamaño (decisión del usuario 2026-07-13): **por personas EN LINKEDIN, no autoreportado — mínimo 3 (2 en transporte), máximo 700** — y resulta que `employeeSize` filtra nativo sobre ese conteo (`staff.total`), así que va en la query misma. Ojo: el filtro tira ~25% de empresas sin dato de staff — se dejan para una pasada de recuperación posterior si el segmento rinde. La respuesta trae dominio, staff.range (autoreportado), staff.total, NAICS y descripción — el autoreportado se conserva en el CSV como columna de contexto (regla: en transporte/manufactura es el más creíble del TAMAÑO REAL, aunque el corte de alcanzabilidad sea por LinkedIn).
 2. **Dedupe** contra Supabase por dominio (gratis).
 3. **Enriquecer con el crawler propio** (`gtm-web-crawler`, $0) → clean_text por sitio.
 4. **Segmentar por subcategoría desde el sitio** (con subagentes estilo `gtm-classify-b2b`): en autotransporte → flota de carga general / refrigerado / freight forwarder / 3PL / software para transporte / paquetería. La etiqueta de LinkedIn NO decide la subcategoría; el sitio sí.

@@ -17,6 +17,7 @@ _(paths verificados por sondeo 2026-07: /v3/search/companies, /v3/search/people,
 ## Seeds que funcionaron / no funcionaron
 
 - [2026-07-13] (señal) Transporte refrigerado MX — 10 seeds construidos con el modo SEEDS (universo AI Ark + clean_text del crawler + evaluación LLM), warmup OK los 10: carriers frioexpress.com, cabalo.mx, fwdlogistica.com, gpmetlogistics.com, transportesgmx.com, alsur.com.mx, corporativoenciso.com; cadena de frío/3PL frigorificosarcosa.com, dickalogistics.com, accessa.com.mx. Falsos positivos típicos del nicho detectados: aseguradoras de carga, fabricantes de carrocerías refrigeradas, retail de congelados, aduanales genéricas. (Pendiente: correr el lookalike y calificar la limpieza.)
+- [2026-07-13] (señal) Instaladores solares MX — cold start completo en ~10 min y 3.2 créditos de AI Ark (probe + pool de 31 candidatos con descripción incluida): 10 seeds warmup-OK: galt.mx, ecocentro.mx, naturalproject.mx, energialibre.com.mx, energiasolarinc.com, marsamsolar.com, sunbank.mx, heliostecnologiasolar.net, pueblosolar.mx, greenvolt.com.mx. Descartados por evaluación: telecom conglomerate, 2 US, automatización, remodelaciones. OJO: el warmup puede fallar con "crawler failed" en dominios reales (etesla.mx, globalsolare.com) — tener 2-3 backups evaluados listos.
 
 ## Entradas
 

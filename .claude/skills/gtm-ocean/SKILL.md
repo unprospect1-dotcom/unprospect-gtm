@@ -35,7 +35,9 @@ argument-hint: <workspace> <dominios seed separados por coma | descripción>
 
 Cuando NO hay clientes reales para usar de seed (o se quiere un lookalike por sub-nicho), los seeds se construyen con evidencia, no con memoria:
 
-1. **Candidatos**: filtra el universo enumerado (`lists/<ws>/*.csv`) o Supabase por señales del nicho — keyword en `description`, bucket de ventas sano (1–50), tamaño medio. Si hay crawl previo, busca la keyword en `site_crawls.clean_text` (PostgREST `ilike`) — el sitio pesa más que la etiqueta.
+1. **Candidatos** — dos variantes según lo que exista:
+   - **Con universo/crawls previos**: filtra el universo enumerado (`lists/<ws>/*.csv`) o Supabase por señales del nicho — keyword en `description`, bucket de ventas sano (1–50), tamaño medio. Si hay crawl previo, busca la keyword en `site_crawls.clean_text` (PostgREST `ilike`) — el sitio pesa más que la etiqueta.
+   - **Cold start (nicho nuevo, cero datos)**: AI Ark `productAndServices` SMART con el servicio en español+inglés (ej. "instalación de paneles solares") + geo + employeeSize. SMART es angosto (decenas, no miles) — exactamente lo que quieres para seeds: jalar el pool completo cuesta centavos (0.1/empresa) y las descripciones vienen en el response. Sondea gratis el tamaño del nicho en GetLeads antes (`company_description` + count = $0).
 2. **Evidencia**: para cada candidato saca ventanas de texto alrededor de la keyword desde `clean_text` (si un dominio no está crawleado, córrele `gtm-web-crawler` al momento).
 3. **Evaluación LLM (Claude lee, no un regex)**: clasifica cada candidato — ¿el nicho es su NEGOCIO CENTRAL o solo lo menciona? Tira los adyacentes (en "transporte refrigerado": aseguradoras de carga, fabricantes de cajas refrigeradas, tiendas de electrodomésticos y aduanales genéricas TODOS mencionan "refrigerado"). Quédate con 10, mezclando sub-roles a propósito (ej. 7 carriers + 3 cadena de frío) según lo que deba capturar el lookalike.
 4. **Validación**: `warmup` con los 10 (GRATIS) — todos deben salir en `successfulDomains`; los que no, se esperan 2–5 min (crawl de Ocean) o se sustituyen.

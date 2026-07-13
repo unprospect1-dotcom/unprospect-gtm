@@ -1,6 +1,21 @@
 # Universo autotransporte MX — enumeración AI Ark (2026-07-13)
 
-**Estado: enumeración completa · buckets de ventas en proceso (batch gratis GetLeads)**
+**Estado: COMPLETO — enumeración + buckets de equipo comercial fusionados (batch gratis GetLeads, 9,238 conteos, $0)**
+
+## Distribución de buckets (México con dominio, 4,661 empresas)
+| sales_bucket | Empresas | % |
+|---|---|---|
+| 0-sin-señal | 2,940 | 63% |
+| 1-2 | 960 | 20% |
+| 3-10 | 589 | 12% |
+| 11-50 | 156 | 3% |
+| 50+ | 16 | <1% |
+
+- **1,482 empresas NUEVAS (no en Supabase) con equipo comercial de 1–50** — el corazón del target.
+- "0-sin-señal" ≠ sin equipo: significa cero contactos etiquetados ventas en GetLeads; muchas tienen
+  gente (`total_count` > 0) sin etiquetar — se rescatan con la escalera de fallback del skill gtm-getleads.
+- La doble compuerta funcionó: **187 empresas** tienen `staff_linkedin` (AI Ark) inflado >3× vs el
+  conteo real de GetLeads — usar `total_count`/`sales_count` como verdad de alcanzabilidad.
 
 ## Qué es
 Etapa 1 del pipeline canónico (ver `docs/PLAN-lead-platforms.md` §5): el universo completo de

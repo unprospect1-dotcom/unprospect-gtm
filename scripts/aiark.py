@@ -39,6 +39,7 @@ def call(method, url, key, body=None, retries=4):
             "X-TOKEN": key,
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "User-Agent": "curl/8.5.0",  # Cloudflare 403/1010 sin UA
         })
         try:
             with urllib.request.urlopen(req, timeout=180) as r:

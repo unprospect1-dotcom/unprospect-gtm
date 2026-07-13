@@ -16,7 +16,7 @@ _(paths verificados por sondeo 2026-07: /v3/search/companies, /v3/search/people,
 
 ## Seeds que funcionaron / no funcionaron
 
-_(por workspace: qué dominios seed dieron lookalikes limpios)_
+- [2026-07-13] (señal) Transporte refrigerado MX — 10 seeds construidos con el modo SEEDS (universo AI Ark + clean_text del crawler + evaluación LLM), warmup OK los 10: carriers frioexpress.com, cabalo.mx, fwdlogistica.com, gpmetlogistics.com, transportesgmx.com, alsur.com.mx, corporativoenciso.com; cadena de frío/3PL frigorificosarcosa.com, dickalogistics.com, accessa.com.mx. Falsos positivos típicos del nicho detectados: aseguradoras de carga, fabricantes de carrocerías refrigeradas, retail de congelados, aduanales genéricas. (Pendiente: correr el lookalike y calificar la limpieza.)
 
 ## Entradas
 

@@ -31,10 +31,20 @@ argument-hint: <workspace> <dominios seed separados por coma | descripción>
 - Ejecuta con `scripts/ocean.py` (subcomandos: `balance`, `warmup`, `companies`, `people`, `reveal-emails`, `enrich-company`).
 - Paths verificados contra la API real (2026-07); los nombres exactos de campos del body pueden variar — ante 400, ajustar y registrar en LEARNINGS.
 
+## Modo SEEDS — armar los 10 seeds perfectos sin salir de la terminal ($0)
+
+Cuando NO hay clientes reales para usar de seed (o se quiere un lookalike por sub-nicho), los seeds se construyen con evidencia, no con memoria:
+
+1. **Candidatos**: filtra el universo enumerado (`lists/<ws>/*.csv`) o Supabase por señales del nicho — keyword en `description`, bucket de ventas sano (1–50), tamaño medio. Si hay crawl previo, busca la keyword en `site_crawls.clean_text` (PostgREST `ilike`) — el sitio pesa más que la etiqueta.
+2. **Evidencia**: para cada candidato saca ventanas de texto alrededor de la keyword desde `clean_text` (si un dominio no está crawleado, córrele `gtm-web-crawler` al momento).
+3. **Evaluación LLM (Claude lee, no un regex)**: clasifica cada candidato — ¿el nicho es su NEGOCIO CENTRAL o solo lo menciona? Tira los adyacentes (en "transporte refrigerado": aseguradoras de carga, fabricantes de cajas refrigeradas, tiendas de electrodomésticos y aduanales genéricas TODOS mencionan "refrigerado"). Quédate con 10, mezclando sub-roles a propósito (ej. 7 carriers + 3 cadena de frío) según lo que deba capturar el lookalike.
+4. **Validación**: `warmup` con los 10 (GRATIS) — todos deben salir en `successfulDomains`; los que no, se esperan 2–5 min (crawl de Ocean) o se sustituyen.
+5. Los seeds aprobados van al REPORT y a LEARNINGS (sección "Seeds que funcionaron").
+
 ## Flujo (contrato universal: gratis → contar → muestra → aprobar → gastar)
 
 ### 1. Seeds y filtros — inferir, preguntar lo mínimo
-Pide/toma los 3–10 dominios seed (clientes reales del workspace > logos aspiracionales — los seeds definen todo). Del buyer map infiere jobTitles/seniorities; pregunta solo geografía/tamaño si no están en el ICP. Elige modo `precise` salvo que el usuario quiera ampliar (`broad`).
+Pide/toma los 3–10 dominios seed (clientes reales del workspace > logos aspiracionales — los seeds definen todo; sin clientes reales, usa el **modo SEEDS** de arriba). Del buyer map infiere jobTitles/seniorities; pregunta solo geografía/tamaño si no están en el ICP. Elige modo `precise` salvo que el usuario quiera ampliar (`broad`).
 
 ### 2. Warmup (gratis)
 Corre `warmup` con los seeds. Si algún seed no está en la DB de Ocean, espera el crawl (2–5 min) antes de buscar — un seed vacío degrada todo el lookalike.

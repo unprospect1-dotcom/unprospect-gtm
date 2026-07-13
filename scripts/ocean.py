@@ -44,6 +44,8 @@ def call(method, url, key, body=None, retries=4):
             "x-api-token": key,
             "Content-Type": "application/json",
             "Accept": "application/json",
+            # Cloudflare banea la firma de urllib (error 1010) — UA tipo curl la evita
+            "User-Agent": "curl/8.5.0",
         })
         try:
             with urllib.request.urlopen(req, timeout=180) as r:

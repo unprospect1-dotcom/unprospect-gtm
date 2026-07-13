@@ -34,6 +34,7 @@ def call(url, key, body, rps=2.0, retries=4):
         req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST", headers={
             "X-KEY": key,
             "Content-Type": "application/json",
+            "User-Agent": "curl/8.5.0",  # Cloudflare 403/1010 sin UA
         })
         try:
             with urllib.request.urlopen(req, timeout=180) as r:

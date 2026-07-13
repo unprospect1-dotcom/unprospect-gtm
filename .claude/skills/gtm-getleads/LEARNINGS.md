@@ -26,6 +26,7 @@
 
 - [2026-07-13] Transporte carga MX (Truck Transportation + Transportation/Trucking/Railroad + Freight and Package Transportation, HQ Mexico): 29,462 contactos; DMs unión 3 personas ≈ 4,300.
 - [2026-07-13] Gap de bases GetLeads vs AI Ark (mismas 3 empresas MX): Estafeta 4,640 vs 2,722; Castores 544 vs 349; Tresguerras 565 vs 248. GetLeads lista 1.6–2.3× más gente; AI Ark compensa con email finding en tiempo real. Ninguna base sola es el universo.
+- [2026-07-13] (confirmado) Patrón "tamaño de depto de ventas por empresa" validado: `count {domains:[X], job_functions:["Sales & Business Development"]}` gratis por dominio — Estafeta 659, Tresguerras 65, Castores 20. Para DESCUBRIR empresas por tamaño de equipo de ventas (sin lista previa) el filtro nativo es de AI Ark: `account.metric.employee [{function:["sales"], start, end}]` a 0.1 créditos/empresa.
 
 ## Endpoints/campos corregidos en corridas reales
 

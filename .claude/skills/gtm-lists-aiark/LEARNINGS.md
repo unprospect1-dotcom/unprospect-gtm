@@ -9,6 +9,8 @@
 - [2026-07-13] (confirmado) El search cobra 0.5 créditos POR PERFIL DEVUELTO — no es gratis. Sondear con `size:1` (el `totalElements` sale completo por 0.5) y jamás paginar de más. Evidencia: saldo 15,100.0 → 15,099.5 tras un search de size=1.
 - [2026-07-13] (confirmado) Para conteos masivos (sizing de mercado, tamaño de deptos por empresa) usar `gtm-getleads` primero — sus counts cuestan 0; AI Ark entra para el cierre de emails (encuentra+verifica en tiempo real, no cobra si no hay).
 - [2026-07-13] (confirmado) `contact.departmentAndFunction` tiene valores maestros que agrupan: `master_sales` (incluye sales, inside_sales, field_outside_sales, channel_sales, sales_operations, sales_enablement, sales_engineering, sales_training), `master_marketing`, `master_finance`, etc. Usar el master para contar el depto completo.
+- [2026-07-13] (confirmado) Company search cuesta 0.1 créditos por empresa devuelta (más barato que people: 0.5/perfil). Evidencia: saldo 15,098.0 → 15,097.9 con size=1.
+- [2026-07-13] (confirmado) **Segmentar por tamaño de departamento es filtro NATIVO del company search**: `account.metric.employee: [{function: ["sales"], start: 3, end: 10}]` (enum CompanyDepartmentEnum: sales, marketing, business_development, finance, engineering…, 27 valores). También `account.metric.growth` con `timeFrame` en meses = deptos CRECIENDO. Probado en vivo: transporte MX con equipo de ventas 3–10 → 857 empresas.
 
 ## Endpoints/paths corregidos en corridas reales
 

@@ -27,38 +27,69 @@ y se evaluó negocio central por descripción; falsos positivos tirados: staffin
 ciberseguridad pura, software de producto vertical, call centers, reclutadoras puras,
 un fabricante industrial y un transportista.
 
-### Seeds TI (6 fábricas de software + 4 consultoras/integradoras TI)
+### Seeds TI FINALES (6 fábricas de software + 4 consultoras/integradoras TI)
 
 teknik.mx, gtec.com.mx, dotnet.com.mx, thincode.com, rd-its.com, cynthus.com.mx,
-matersys.mx, hlsgroup.com.mx, itbs-grp.com, solsersistem.net
-(novutek.com falló el crawler de Ocean → sustituido por itbs-grp.com; backup extra: interax.com.mx)
+matersys.mx, softnet.com.mx, itbs-grp.com, interax.com.mx
+(Sustituciones: novutek.com "crawler failed" → itbs-grp.com; solsersistem.net crawl >7 min → interax.com.mx;
+hlsgroup.com.mx warmup OK pero "missing context vector" en search → softnet.com.mx)
 
-### Seeds contable (fiscal internacional + despachos integrales + mid-market local)
+### Seeds contable FINALES (fiscal internacional + despachos integrales + mid-market local)
 
 skatt.com.mx, loftonsc.com, pkf.com.mx, bhrmx.com, delapazcostemalle.com.mx,
-bargallocardosoyasociados.com, nexiamexico.mx, hlbpuebla.com, grservicios.com.mx, ramirezsoto.com.mx
+bargallocardosoyasociados.com, nexiamexico.mx, hlbpuebla.com, ramirezsoto.com.mx, villegasyvillegas.com.mx
+(grservicios.com.mx crawl >7 min → villegasyvillegas.com.mx)
 
-### Seeds BPO/nómina (6 nómina/administración de personal + 3 back-office/shelter, SIN call centers ni reclutadoras)
+### Seeds BPO/nómina v2 FINALES (solo nómina/administración de personal)
 
-pronomina.com.mx, eog.mx, pagopro.com.mx, grupoono.lat, grupoestrategia.mx,
-intermex.mx, labormx.com, coltomex.com, alliax.com
+pronomina.com.mx, eog.mx, grupoono.lat, grupoestrategia.mx, intermex.mx, labormx.com
 
-## Filtros Ocean (reproducibles)
+**Learning clave:** la v1 incluía coltomex.com y alliax.com (back-office/shared services tech) y la muestra
+se fue COMPLETA a consultoría TI/procesos — 2 seeds tech entre 8 arrastraron el centro semántico.
+La v2 sin ellos regresó el universo a capital humano/nómina. pagopro.com.mx quedó fuera (crawl no terminó).
 
-`companyMatchingMode: precise`, `primaryLocations: ["mx"]`,
-`employeeCountLinkedin: {from: 10, to: 700}`, `excludeDomains` = los seeds.
-Archivos: oc_ti.json / oc_conta.json / oc_bpo.json (scratchpad de la sesión).
+## Filtros Ocean (reproducibles, sintaxis verificada)
 
-## Muestras y totales
+```json
+{"companiesFilters": {"lookalikeDomains": [...], "excludeDomains": [...seeds],
+ "companyMatchingMode": "precise",
+ "primaryLocations": {"includeCountries": ["mx"]},
+ "employeeCountLinkedin": {"from": 10, "to": 700}}}
+```
+(⚠️ `primaryLocations` es objeto; `companyMatchingMode` va DENTRO de companiesFilters.)
 
-_(pendiente — se llena al correr las muestras de 10)_
+## Muestras y totales (size 10 c/u, relevancia A en todos los devueltos)
 
-## Créditos
+| Universo | Total | Calidad de muestra | Nota |
+|---|---|---|---|
+| ti-consultoria-software-mx | **3,068** | 10/10 en nicho | consultoras/dev shops puras |
+| despachos-contables-mx | **1,503** | ~7-8/10 | drift menor a legal (2) + 1 SaaS facturación — recortable con relevancia A + clasificación |
+| bpo-nomina-mx (v2) | **3,503** | ~6-7/10 nómina/PEO core | 2-3 reclutadoras puras coladas — en MX nómina y staffing son un mismo espacio; separar exige crawl+clasificación |
 
-- AI Ark: ~9.3 cr (3 sondeos size 1 + 3 pools de 30)
-- Ocean: warmup gratis; muestras 3 × 10 × 0.2 = ~6 cr (por confirmar con creditsUsed)
+## Créditos gastados en esta fase
+
+- AI Ark: ~9.3 cr (3 sondeos size 1 + 3 pools de 30) — saldo 13,869.4 → ~13,860
+- Ocean: 8.2 cr (1 sondeo size 1 + 4 muestras de 10 × 2.0 cr) — saldo 4,142.8 → 4,134.6 one-time (+300 recurrentes)
+
+## Estimación del pull completo (0.2 cr/resultado, search only)
+
+| Universo | Total | Costo search | Nota |
+|---|---|---|---|
+| TI | 3,068 | ~614 cr | |
+| Contable | 1,503 | ~301 cr | |
+| BPO/nómina | 3,503 | ~701 cr | pendiente decisión del usuario por mezcla con staffing |
+
+Los tres juntos ≈ 1,616 cr > tope de 800 cr/corrida → correr en tandas.
+La relevancia A suele ser ~40-45% del universo (caso solar) — el corte A se hace local post-pull.
+Emails (reveal) = 1 cr/verificado, se estima después de elegir personas.
 
 ## Dedupe
 
 - `outreach_log` no existe aún en Supabase (nada contactado) — nada que excluir.
 - `list_companies` (9,530 filas: solar/autotransporte) se cruza antes del pull completo.
+
+## Universo aparcado (decisión del usuario)
+
+- **Software MX que mencione IA** — para después. Rutas: keywords filter en Ocean sobre lookalike de
+  software factories, o post-filtro del crawl del universo TI (la señal "IA" abunda: ya se ve en keywords
+  de la muestra TI: ensitech, adbansys, virtus, bcareconsulting).

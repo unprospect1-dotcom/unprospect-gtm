@@ -87,12 +87,25 @@ La v2 sin ellos regresó el universo a capital humano/nómina. pagopro.com.mx qu
 - Incidente: un reset de conexión tumbó el pull entre universos; el driver con resume por página
   no perdió créditos y el retry de errores de red quedó endurecido (backoff exponencial).
 
-## Web enrichment (gtm-web-crawler, $0)
+## Web enrichment (gtm-web-crawler, $0) — COMPLETADO 2026-07-14
 
 Corte de relevancia A (regla confirmada del skill): **1,641 dominios** (1,067 TI + 574 contable),
 concurrencia 5, persistencia directa a Supabase `site_crawls` (upsert por dominio, resume idempotente).
-El `clean_text` resultante es el insumo para clasificación B2B y segmentación por dolor.
-Los `ok:false` (Cloudflare/challenge) quedan marcados para la capa B agéntica.
+
+| Universo | Crawleados | OK | Fallidos (capa B agéntica) | Tasa |
+|---|---|---|---|---|
+| TI (relevancia A) | 1,067 | 859 | 144 (+64 previos al restart sin desglose en log) | ~81-86% |
+| Contable (relevancia A) | 574 | 516 | 58 | 90% |
+
+- Un reinicio del contenedor a media corrida NO costó nada: resume por archivo + upsert por dominio.
+- El `clean_text` de site_crawls es el insumo para gtm-classify-b2b y gtm-pain-segments (paso siguiente).
+- Los `ok:false` (challenge/Cloudflare/sitio muerto) están marcados en site_crawls para la capa B agéntica.
+
+## Siguiente paso sugerido
+
+1. `gtm-classify-b2b` sobre el clean_text de los dos universos (verificar negocio central, tirar colados).
+2. `gtm-pain-segments` con sales_count/departmentSizes ya capturados en list_companies.
+3. People search + reveal de emails en Ocean SOLO sobre las empresas verificadas.
 
 ## Dedupe
 

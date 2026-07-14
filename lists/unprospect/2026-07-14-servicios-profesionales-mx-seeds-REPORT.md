@@ -101,11 +101,23 @@ concurrencia 5, persistencia directa a Supabase `site_crawls` (upsert por domini
 - El `clean_text` de site_crawls es el insumo para gtm-classify-b2b y gtm-pain-segments (paso siguiente).
 - Los `ok:false` (challenge/Cloudflare/sitio muerto) están marcados en site_crawls para la capa B agéntica.
 
-## Siguiente paso sugerido
+## Siguiente paso (handoff de sesión 2026-07-14)
 
-1. `gtm-classify-b2b` sobre el clean_text de los dos universos (verificar negocio central, tirar colados).
-2. `gtm-pain-segments` con sales_count/departmentSizes ya capturados en list_companies.
-3. People search + reveal de emails en Ocean SOLO sobre las empresas verificadas.
+El playbook de messaging quedó cerrado y aprobado: `workspaces/unprospect/PLAYBOOK-v2-personalizado.md`
+(v2.3, fiel a la estructura del original; el dolor viene del bucket de equipo de ventas, la
+`{{observacion}}` del crawl solo sustituye a `{{industry}}` como clase de referencia).
+
+Pendiente en orden:
+1. **Extracción de slots AI** sobre los 1,375 `clean_text` de site_crawls: `observacion`
+   (cláusula que completa "una empresa que...", empieza con verbo) + `icp_corto` + confianza,
+   con capa de verificación ciega (patrón gtm-classify-b2b). Muestra de 20 filas para
+   aprobación del usuario ANTES del batch completo. Upsert a Supabase junto a cada empresa.
+2. `gtm-classify-b2b` / verificación de negocio central con el mismo clean_text (tirar colados).
+3. Routing de buckets con `list_companies.sales_count` + señal Ads de GetLeads
+   (`where_sql MONTHLY_GOOGLE_ADSPEND_ORG > 0`).
+4. People search + reveal de emails en Ocean SOLO sobre empresas verificadas (saldo: 3,220.4 + 300).
+5. Universos aparcados por decisión del usuario: software MX con IA (post-filtro del crawl TI,
+   gratis), mayoreo rebanado por vertical, SaaS con funding, CNC boutique (~73 SMART).
 
 ## Dedupe
 

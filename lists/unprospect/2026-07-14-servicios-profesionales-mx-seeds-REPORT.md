@@ -2,9 +2,11 @@
 
 - **Fecha:** 2026-07-14
 - **Workspace:** unprospect
-- **Estado:** muestras en curso — pendiente aprobación del usuario para el pull completo
+- **Estado:** **aprobado y ejecutado** — TI y contable jalados completos y en Supabase; BPO descartado;
+  web enrichment (crawl A) en curso.
 - **Decisiones del usuario:** foco en servicios profesionales; staffing EXCLUIDO (fees bajos en MX);
-  tamaño mínimo 10 empleados alcanzables (LinkedIn); "software que mencione IA" aparcado como universo futuro.
+  tamaño mínimo 10 empleados alcanzables (LinkedIn); "software que mencione IA" aparcado como universo futuro;
+  **BPO/nómina descartado del todo** (2026-07-14); TI + contable aprobados para pull completo + web enrichment.
 
 ## Contexto de saldo
 
@@ -71,17 +73,26 @@ La v2 sin ellos regresó el universo a capital humano/nómina. pagopro.com.mx qu
 - AI Ark: ~9.3 cr (3 sondeos size 1 + 3 pools de 30) — saldo 13,869.4 → ~13,860
 - Ocean: 8.2 cr (1 sondeo size 1 + 4 muestras de 10 × 2.0 cr) — saldo 4,142.8 → 4,134.6 one-time (+300 recurrentes)
 
-## Estimación del pull completo (0.2 cr/resultado, search only)
+## Pull completo EJECUTADO (2026-07-14, costos reales)
 
-| Universo | Total | Costo search | Nota |
-|---|---|---|---|
-| TI | 3,068 | ~614 cr | |
-| Contable | 1,503 | ~301 cr | |
-| BPO/nómina | 3,503 | ~701 cr | pendiente decisión del usuario por mezcla con staffing |
+| Universo | Empresas | Relevancia A/B/C | Créditos | Artefactos |
+|---|---|---|---|---|
+| ti-consultoria-software-mx | 3,068 | **1,067** / 1,952 / 49 | 613.6 | CSV local (gitignored) + Supabase `list_companies` |
+| despachos-contables-mx | 1,503 | **574** / 896 / 33 | 300.6 | CSV local (gitignored) + Supabase `list_companies` |
+| bpo-nomina-mx | — | — | 0 | **DESCARTADO por el usuario** (staffing no paga fees en MX) |
 
-Los tres juntos ≈ 1,616 cr > tope de 800 cr/corrida → correr en tandas.
-La relevancia A suele ser ~40-45% del universo (caso solar) — el corte A se hace local post-pull.
-Emails (reveal) = 1 cr/verificado, se estima después de elegir personas.
+- Gasto total del pull: 914.2 cr. Saldo final Ocean: **3,220.4 one-time + 300 recurrentes**.
+- Gasto acumulado de la corrida completa (sondeos + muestras + pull): ~922.4 cr Ocean + ~9.3 cr AI Ark.
+- Traslape con universos previos (solar/autotransporte): 171 dominios de TI — coexisten por (niche, domain).
+- Incidente: un reset de conexión tumbó el pull entre universos; el driver con resume por página
+  no perdió créditos y el retry de errores de red quedó endurecido (backoff exponencial).
+
+## Web enrichment (gtm-web-crawler, $0)
+
+Corte de relevancia A (regla confirmada del skill): **1,641 dominios** (1,067 TI + 574 contable),
+concurrencia 5, persistencia directa a Supabase `site_crawls` (upsert por dominio, resume idempotente).
+El `clean_text` resultante es el insumo para clasificación B2B y segmentación por dolor.
+Los `ok:false` (Cloudflare/challenge) quedan marcados para la capa B agéntica.
 
 ## Dedupe
 

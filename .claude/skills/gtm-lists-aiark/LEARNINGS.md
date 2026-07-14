@@ -16,6 +16,8 @@
 
 - [2026-07-13] Saldo: `GET /payments/credits` (el `/credit` que traía el script daba 401). Auth: header `X-TOKEN` (Bearer NO funciona pese a lo que dice first-steps de sus docs). Env var real: `AI_ARK_API`.
 - [2026-07-13] People search `POST /v1/people` verificado en vivo; exige `size >= 1` (size=0 da 400).
+- [2026-07-14] (confirmado) `account.location` NO usa la forma de filtro de texto (`{any:{include:{mode,content}}}` da 400 "request not readable") — usa forma enum: `{"location": {"any": {"include": ["Mexico"]}}}`. Verificado en company search en vivo.
+- [2026-07-14] (confirmado) En el response de companies, `location.headquarter.country`, `link.domain`, `keywords`, `industries` y `naics` viven en el NIVEL SUPERIOR del registro (no en `summary`); `summary` solo trae name/description/founded_year/type/industry/staff/logo. El post-filtro MX es `record.location.headquarter.country == "Mexico"` (ojo: a veces viene en minúscula "mexico").
 
 ## Reglas del usuario (correcciones textuales)
 

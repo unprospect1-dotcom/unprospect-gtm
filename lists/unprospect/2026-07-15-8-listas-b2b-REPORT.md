@@ -23,7 +23,9 @@
 - Saldo Ocean final: **0 one-time + ~110 recurrentes** (empezamos con 3,220 one-time + 300 recurrentes).
 - **Web crawl A-cut:** 2,203 dominios, **91% ok** (2,017 crawleados a `site_crawls`, 186 a capa-B agéntica).
 - **Google Ads (Apify Transparency Center, 1 ad/dominio):** flag `ads_runs`/`ads_last_shown`/`ads_formats`
-  en `list_companies` sobre los 22,008 dominios únicos de los 12 universos. ~23% del A-cut anuncia.
+  en `list_companies` sobre los 22,008 dominios únicos de los 12 universos. **Resultado final:
+  3,550 dominios anuncian (16.1% del total; ~23% del A-cut, que es mayor calidad).** Costo Apify
+  total ~$11 (3 cuentas FREE, ~$5/mes c/u, con rotación de tokens).
 
 ## Seeds por universo (los que funcionaron)
 

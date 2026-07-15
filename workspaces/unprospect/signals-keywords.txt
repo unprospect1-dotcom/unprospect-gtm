@@ -1,0 +1,57 @@
+# Keywords del harvest semanal de señales de contratación (LinkedIn Jobs MX).
+# Confirmado por el usuario 2026-07-15. Una keyword por línea; el script arma
+# una URL de búsqueda por cada una (location=Mexico, f_TPR=r604800). Dedupe por job_id.
+# tier1 = señal directa de prospección/nuevo negocio; tier2 = comercial general;
+# adj = marketing de crecimiento/demand gen (fit MEDIO salvo outbound explícito).
+
+# --- tier1 ---
+SDR
+BDR
+sales development representative
+business development representative
+business development manager
+desarrollo de negocios
+desarrollo de nuevos negocios
+desarrollo comercial
+desarrollo de mercado
+hunter
+ventas hunter
+prospección
+prospectador
+generación de leads
+generación de demanda
+demand generation
+lead generation
+outbound
+apertura de cuentas
+apertura de mercado
+alianzas comerciales
+alianzas estratégicas
+inside sales
+ventas internas
+
+# --- tier2 ---
+ventas B2B
+comercial
+ejecutivo comercial
+ejecutivo de ventas
+representante de ventas
+asesor comercial
+asesor de ventas
+gerente comercial
+gerente de ventas
+director comercial
+director de ventas
+ejecutivo de cuentas
+account executive
+key account manager
+consultor comercial
+coordinador comercial
+expansión comercial
+partnerships
+strategic partnerships
+
+# --- adj (growth / demand gen) ---
+growth
+growth marketing
+mercadotecnia de crecimiento

@@ -50,17 +50,38 @@
   y Computrabajo (`santamaria-automations/computrabajo-scraper`, 19 países LATAM) — para
   PyMEs que no publican en LinkedIn. Fase 2 si LinkedIn deja huecos.
 
-## 3. Set de roles del HARVEST (una URL de búsqueda por keyword)
-Roles donde el trabajo ES prospección/apertura de cuentas/nuevo negocio (fit directo):
-- `sales development representative`, `business development representative`, `SDR`, `BDR`
-- `ejecutivo de ventas`, `representante de ventas`, `inside sales`
-- `prospectador`, `generación de leads`, `lead generation`
-- `desarrollo de negocios`, `ejecutivo comercial`, `demand generation`
-- `growth marketing`, `account executive` (new logo)
-- Dueños del dolor (para bucket alto): `gerente comercial`, `director de ventas`, `head of sales`
+## 3. Set de keywords del HARVEST (CONFIRMADO por el usuario 2026-07-15)
+Una URL de búsqueda LinkedIn Jobs por keyword (ES+EN), location=Mexico, `f_TPR=r604800`.
+Decisión: **barrer amplio** (Tier 1 + Tier 2 completo + growth/demand gen); el costo es
+trivial ($0.001/resultado) y el **calificador poda** el ruido. Dedupe por `job_id` colapsa
+los duplicados entre búsquedas.
 
-El calificador (etapa 3) es quien decide fit real leyendo la descripción — el set de roles
-solo es la **red amplia**; la precisión la pone el LLM, no el keyword.
+**Tier 1 — señal directa de prospección/nuevo negocio:**
+`SDR`, `BDR`, `sales development representative`, `business development representative`,
+`business development manager`, `desarrollo de negocios`, `desarrollo de nuevos negocios`,
+`desarrollo comercial`, `desarrollo de mercado`, `hunter`, `ventas hunter`, `prospección`,
+`prospectador`, `generación de leads`, `generación de demanda`, `demand generation`,
+`lead generation`, `outbound`, `apertura de cuentas`, `apertura de mercado`,
+`alianzas comerciales`, `alianzas estratégicas`, `inside sales`, `ventas internas`
+
+**Tier 2 — comercial general (recall alto, el calificador poda):**
+`ventas B2B`, `comercial`, `ejecutivo comercial`, `ejecutivo de ventas`,
+`representante de ventas`, `asesor comercial`, `asesor de ventas`, `gerente comercial`,
+`gerente de ventas`, `director comercial`, `director de ventas`, `ejecutivo de cuentas`,
+`account executive`, `key account manager`, `consultor comercial`, `coordinador comercial`,
+`expansión comercial`, `partnerships`, `strategic partnerships`
+
+**Adyacentes aprobados — marketing de crecimiento / demand gen (fit MEDIO salvo outbound explícito):**
+`growth`, `growth marketing`, `mercadotecnia de crecimiento`, `demand generation`
+
+> `comercial` a secas es la de mayor recall y mayor ruido (jala analista/coordinador/retail);
+> se queda porque el calificador ya sabe tirar enterprise y reclutadoras.
+> El calificador (etapa 3) decide fit real leyendo la descripción — las keywords son la
+> **red amplia**; la precisión la pone el LLM, no el keyword.
+
+**NOTA de la muestra 2026-07-15:** el dashboard inicial se corrió solo con 5 keywords
+(sales development representative, ejecutivo de ventas, gerente comercial, desarrollo de
+negocios, inside sales) — NO era el set completo. La próxima corrida usa el set de arriba.
 
 ## 4. El CALIFICADOR (corazón del flujo)
 **Pregunta que responde:** ¿el problema/las actividades del puesto son los que Unprospect

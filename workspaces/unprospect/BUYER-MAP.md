@@ -19,28 +19,46 @@ Fallback: si no aparece el nivel director+, bajar a coordinador/jefe; si nada, d
 ## Banco de títulos — Capa B (diccionario, WORD mode)
 
 ### P1 · Dirección/Dueño
-**ES:** Director General · Dirección General · Direccion General · Director Ejecutivo · Gerente General ·
+**ES masc:** Director General · Dirección General · Direccion General · Director Ejecutivo · Gerente General ·
 Fundador · Cofundador · Co-Fundador · Socio · Socio Director · Socio Fundador · Dueño · Dueno ·
 Propietario · Presidente · Consejero Delegado · Administrador Único · Administrador Unico · Apoderado Legal · Director
+**ES fem (¡obligatorio!):** Directora General · Directora Ejecutiva · Gerente General *(neutro)* · Gerenta General ·
+Fundadora · Cofundadora · Socia · Socia Directora · Dueña · Propietaria · Presidenta · Directora · Administradora Única
 **EN:** CEO · Founder · Co-Founder · Owner · President · Managing Director · Managing Partner · Chief Executive · Partner
 > Jerga MX clave: "Administrador Único" y "Apoderado Legal" = dueño legal de la razón social (muy común en PyME).
+> **Género (2026-07-16, catch del usuario en movon):** el título en español lleva género y el match los separa —
+> incluir SIEMPRE la forma femenina (Directora, Dueña, Socia, Fundadora, Presidenta, Jefa, Coordinadora).
 
 ### P2 · Líder comercial
 **ES:** Director Comercial · Dirección Comercial · Direccion Comercial · Subdirector Comercial · Gerente Comercial ·
 Gerente de Ventas · Director de Ventas · Jefe de Ventas · Jefe Comercial · Encargado de Ventas ·
 Coordinador Comercial · Coordinador de Ventas · Responsable Comercial · Responsable de Ventas · Líder Comercial · Lider Comercial ·
 Gerente de Nuevos Negocios · Desarrollo de Negocios · Gerente de Cuentas · Gerente de Desarrollo Comercial
+**ES fem:** Directora Comercial · Gerenta Comercial · Jefa de Ventas · Jefa Comercial · Encargada de Ventas ·
+Coordinadora Comercial · Responsable Comercial · Líder Comercial
 **EN:** VP Sales · VP of Sales · Head of Sales · Sales Director · Sales Manager · Chief Revenue Officer · CRO ·
 Commercial Director · Business Development Manager · Head of Business Development
-> Jerga MX clave: "Comercial" ≈ liderazgo de ventas; "Desarrollo de Negocios" = business development.
+> Jerga MX clave: "Comercial" ≈ liderazgo de ventas; "Desarrollo de Negocios" = business development. Incluir formas femeninas.
 
 ### P3 · Líder de marketing
 **ES:** Director de Marketing · Dirección de Marketing · Gerente de Marketing · Director de Mercadotecnia ·
 Dirección de Mercadotecnia · Gerente de Mercadotecnia · Coordinador de Marketing · Coordinador de Mercadotecnia ·
 Jefe de Marketing · Responsable de Marketing · Líder de Marketing · Director de Marca · Gerente de Marca
+**ES fem:** Directora de Marketing · Gerenta de Marketing · Directora de Mercadotecnia · Coordinadora de Marketing ·
+Jefa de Marketing · Responsable de Marketing · Directora de Marca
 **EN:** CMO · Chief Marketing Officer · Head of Marketing · Marketing Director · Marketing Manager · VP Marketing ·
 Head of Growth · Growth Marketing · Demand Generation
 > Jerga MX clave: **"Mercadotecnia"** es la palabra formal de marketing en MX — sin ella se pierde medio universo.
+
+## El hueco estructural de las bases (2026-07-16, del usuario)
+Las bases B2B (AI Ark, GetLeads, Apollo…) son un SUBCONJUNTO de LinkedIn. Mucho dueño/directora de PyME MX
+está **en LinkedIn pero no en ninguna base** (confirmado: la directora general de movon no está en AI Ark ni GetLeads).
+Pasa en TODAS las bases, no en una. Qué hacer con eso:
+- **Para el canal EMAIL:** si la persona no está en las bases, casi nunca hay email verificado aunque scrapees su nombre
+  → **no es emaileable**. Anclar el email en la persona que las bases SÍ tienen con email (típico: P2 comercial).
+- **Para los dueños ausentes de las bases:** son target de **LinkedIn** (Apify saca empleados por LinkedIn URL de la
+  empresa → connection + DM), canal aparte. No bloquear el ship de email por ellos.
+- Solo vale un pase Apify+enrich (LinkedIn→email) en cuentas de alto valor, midiendo hit rate de email antes de escalar.
 
 ## Excludes (falsos positivos a tirar)
 Asistente · Assistant · Becario · Intern · Practicante · Auxiliar · Recepcionista · Community Manager (para P2).

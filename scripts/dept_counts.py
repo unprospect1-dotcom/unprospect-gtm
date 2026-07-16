@@ -33,6 +33,11 @@ SB_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 FN = {"sales": ["Sales & Business Development"], "marketing": ["Advertising & Marketing"]}
 REL_PRIORITY = {"A": 0, None: 1, "B": 2, "C": 3}  # A-cut primero, autotransporte (None) después
 
+# Dominios-plataforma/agregador: GetLeads les cuelga contactos de terceros sin empresa real
+# (company/domain=None), inflando el conteo. Ej. airavirtual.com dio 721 "ventas" que eran
+# vendedores de seguros/tiendas ajenos. Se saltan del conteo → quedan sin señal, no se targetean.
+DENYLIST = {"airavirtual.com"}
+
 
 def bucket(n):
     if n is None:
@@ -109,7 +114,7 @@ def main():
     doms = {}
     for r in rows:
         d = r.get("domain")
-        if not d:
+        if not d or d in DENYLIST:
             continue
         e = doms.setdefault(d, {"prio": 9, "sales_known": None, "mkt_known": None,
                                 "sales_null": False, "mkt_null": False})

@@ -41,7 +41,7 @@ def bucket(r):
     if any(k in text for k in ['manufactur','industrial','fabric','metal','machine','machinery','factory','production','equipment','ingenier']):
         return 'Manufactura/Industrial'
     if any(k in text for k in ['transport','transporte','logistic','logistics','3pl','freight','shipping','cargo','warehouse','distribution','supply','courier']):
-        return 'Logística y Transporte'
+        return 'LogÃ­stica y Transporte'
     if any(k in text for k in ['health','medical','pharma','biotech','hospital','clin']):
         return 'Salud y Farma'
     if any(k in text for k in ['retail','consumo','ecommerce','commerce']):
@@ -49,11 +49,11 @@ def bucket(r):
     if any(k in text for k in ['financ','bank','insurance','seguros','accounting','payment']):
         return 'Finanzas/Seguros'
     if any(k in text for k in ['constru','real estate','inmobili','building','construction']):
-        return 'Construcción/Inmobiliario'
+        return 'ConstrucciÃ³n/Inmobiliario'
     if any(k in text for k in ['educat','school','university','elearning']):
-        return 'Educación'
+        return 'EducaciÃ³n'
     if any(k in text for k in ['energy','oil','gas','utilities','renewable']):
-        return 'Energía'
+        return 'EnergÃ­a'
     if any(k in text for k in ['food','beverage','restaurant','aliment']):
         return 'Alimentos y Bebidas'
     if any(k in text for k in ['recruit','rrhh','talent','human resources','staffing','headhunting']):
@@ -63,7 +63,7 @@ def bucket(r):
     if any(k in text for k in ['gov','government','ngo','nonprofit']):
         return 'Gobierno/ONG'
     if any(k in text for k in ['chemic','quimic']):
-        return 'Química'
+        return 'QuÃ­mica'
     if any(k in text for k in ['consult','service','professional','advisory','outsourcing']):
         return 'Servicios profesionales'
     return 'Otros'

@@ -6,5 +6,10 @@ lists/**/*.jsonl
 
 # gtm-web-crawler: venv y salidas locales (se regeneran con setup.sh / crawl.py)
 .claude/skills/gtm-web-crawler/.venv/
+.claude/skills/gtm-web-crawler/.venv-win/
 .claude/skills/gtm-web-crawler/crawl_out/
 crawl_out/
+*_supervisor_logs/
+
+# Artefactos operativos locales: crawls, checkpoints, muestras y exports de revisión
+work/

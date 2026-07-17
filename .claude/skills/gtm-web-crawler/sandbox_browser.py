@@ -9,18 +9,50 @@ Resuelve tres cosas que rompen cualquier scraper con JS aquí:
      (post-quantum keyshare) -> forzar --ssl-version-max=tls1.2.
 El CA de MITM ya debe estar importado en ~/.pki/nssdb (ver bootstrap_nss()).
 """
-import os, subprocess
+import os, shutil, subprocess
 
-CHROMIUM = "/opt/pw-browsers/chromium"
-PROXY = os.environ.get("HTTPS_PROXY", "http://127.0.0.1:33803")
+
+def _browser_path():
+    configured = os.environ.get("CRAWLER_BROWSER")
+    candidates = [
+        configured,
+        "/opt/pw-browsers/chromium",
+        shutil.which("chromium"),
+        shutil.which("chromium-browser"),
+        shutil.which("google-chrome"),
+        shutil.which("chrome"),
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    ]
+    return next((path for path in candidates if path and os.path.exists(path)), None)
+
+
+CHROMIUM = _browser_path()
+PROXY = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
 
 LAUNCH_ARGS = [
     "--no-sandbox",
-    f"--proxy-server={PROXY}",
-    "--proxy-bypass-list=<-loopback>",
     "--ssl-version-max=tls1.2",
     "--disable-dev-shm-usage",
+    "--renderer-process-limit=6",
+    "--process-per-site",
+    "--disable-site-isolation-trials",
+    "--js-flags=--max-old-space-size=256",
+    "--disk-cache-size=1",
+    "--media-cache-size=1",
+    "--disable-background-networking",
+    "--disable-component-update",
+    "--disable-default-apps",
+    "--disable-extensions",
+    "--blink-settings=imagesEnabled=false",
+    "--disable-remote-fonts",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--mute-audio",
 ]
+if PROXY:
+    LAUNCH_ARGS.extend([f"--proxy-server={PROXY}", "--proxy-bypass-list=<-loopback>"])
 
 def bootstrap_nss():
     """Importa el CA bundle del proxy en el NSS store de Chromium (idempotente).
@@ -28,6 +60,8 @@ def bootstrap_nss():
     OJO: nunca correr `certutil -N` sobre un db existente -> pide password y cuelga.
     Solo inicializa el db si no existe; el import de CA es idempotente.
     """
+    if os.name == "nt":
+        return
     db = os.path.expanduser("~/.pki/nssdb")
     os.makedirs(db, exist_ok=True)
     if not os.path.exists(os.path.join(db, "cert9.db")):
@@ -42,7 +76,10 @@ def bootstrap_nss():
                        capture_output=True, stdin=subprocess.DEVNULL, timeout=20)
 
 def launch_kwargs():
-    return dict(headless=True, executable_path=CHROMIUM, args=LAUNCH_ARGS)
+    result = dict(headless=True, args=LAUNCH_ARGS)
+    if CHROMIUM:
+        result["executable_path"] = CHROMIUM
+    return result
 
 def patch_crawl4ai():
     """Inyecta executable_path en el launch de crawl4ai (no lo expone su API)."""
@@ -50,9 +87,10 @@ def patch_crawl4ai():
     orig = bm.BrowserManager._build_browser_args
     def patched(self):
         d = orig(self)
-        d["executable_path"] = CHROMIUM
+        if CHROMIUM:
+            d["executable_path"] = CHROMIUM
         d.setdefault("args", [])
-        for a in ("--ssl-version-max=tls1.2", "--proxy-bypass-list=<-loopback>", "--no-sandbox"):
+        for a in LAUNCH_ARGS:
             if a not in d["args"]:
                 d["args"].append(a)
         return d

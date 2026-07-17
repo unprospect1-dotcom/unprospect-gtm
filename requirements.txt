@@ -1,0 +1,2 @@
+# Dependencia compartida por los loaders del crawler y gtm-classify-b2b.
+requests>=2.31,<3

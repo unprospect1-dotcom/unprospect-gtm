@@ -1,0 +1,73 @@
+name: Weekly job signals
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: "Run the paid Apify harvest"
+        required: true
+        type: boolean
+        default: false
+      max_results:
+        description: "Maximum postings (10-500)"
+        required: true
+        default: "500"
+
+permissions:
+  contents: read
+
+jobs:
+  harvest:
+    if: ${{ vars.JOB_SIGNALS_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.execute) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+      APIFY_TOKEN2: ${{ secrets.APIFY_TOKEN2 }}
+      APIFYTOKEN3: ${{ secrets.APIFYTOKEN3 }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve result limit
+        id: limit
+        shell: bash
+        run: |
+          requested="${{ inputs.max_results }}"
+          if [[ -z "$requested" ]]; then requested="500"; fi
+          if (( requested < 10 || requested > 500 )); then
+            echo "max_results must be between 10 and 500" >&2
+            exit 2
+          fi
+          echo "value=$requested" >> "$GITHUB_OUTPUT"
+
+      - name: Harvest and persist
+        run: >-
+          python scripts/job_signals.py harvest
+          --live
+          --persist
+          --max-results ${{ steps.limit.outputs.value }}
+          --output work/job-signals-latest.json
+
+      - name: Export compact review queue
+        run: >-
+          python scripts/job_signals.py export-review
+          --output work/job-signals-review.json
+          --limit 500
+
+      - name: Save review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-signals-${{ github.run_id }}
+          path: |
+            work/job-signals-latest.json
+            work/job-signals-review.json
+          retention-days: 30

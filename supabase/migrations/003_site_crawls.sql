@@ -11,8 +11,16 @@ create table if not exists site_crawls (
   http_status text,
   pages jsonb,
   combined_markdown text,
+  clean_text text,
   crawled_at timestamptz not null default now()
 );
+
+-- Upgrade path for databases created before clean_text became the LLM input.
+alter table site_crawls add column if not exists clean_text text;
+
+-- Tabla interna: accesible por el pipeline server-side, nunca por clientes públicos.
+alter table site_crawls enable row level security;
+grant select, insert, update on table site_crawls to service_role;
 
 create index if not exists site_crawls_ok_idx on site_crawls(ok);
 

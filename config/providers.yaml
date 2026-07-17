@@ -62,7 +62,7 @@ ocean:
     mode: precise                 # precise = similitud semántica de producto/servicio; broad = misma industria
     warmup_seeds: true            # validar seeds con /v2/warmup/companies (GRATIS) antes de buscar
   search:
-    count_probe_size: 1           # size:1 primero para ver el total (cuesta 1 crédito) antes de decidir
+    count_probe_size: 1           # size:1 primero para ver el total (~0.2 créditos en company search)
     page_size: 50                 # por página vía cursor searchAfter
   reveal:
     batch: true                   # reveal por lote de person ids; async, 1 crédito por email verificado

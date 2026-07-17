@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | **GetLeads** (`GETLEADS_API`) | **5,000** | `Authorization: Bearer glb_live_…` | 1 crédito por registro devuelto / enrichment exitoso; 0 si no hay match | **`search/count` (conteos), `filter-values`, `health` — 0 créditos** |
 | **AI Ark** (`AI_ARK_API`) | **15,099.5** | header `X-TOKEN` | **La búsqueda SÍ gasta: 0.5 créditos por perfil devuelto** (verificado: 15,100 → 15,099.5 con un search de size=1). Export con email: 1 crédito (0.5 perfil + 0.5 email BounceBan), 0 si no hay email válido | `/v1/payments/credits` (saldo) |
-| **Ocean** (`OCEAN_API`) | **~4,669** (4,368.8 one-time + 300 recurrentes) | header `x-api-token` | 1 crédito por resultado de búsqueda + 1 por email revelado (≈2× por lead) | `warmup` de seeds, `balance` |
+| **Ocean** (`OCEAN_API`) | **~4,669** (4,368.8 one-time + 300 recurrentes) | header `x-api-token` | Company search medido en **0.2 créditos/resultado**; email revelado 1 crédito | `warmup` de seeds, `balance` |
 
 Correcciones descubiertas vs lo que había en el repo:
 

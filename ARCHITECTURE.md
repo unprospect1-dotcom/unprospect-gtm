@@ -46,7 +46,9 @@
 ```
 unprospect-gtm/
 ├── ARCHITECTURE.md              ← este documento
-├── .claude/skills/              ← los skills del GTM OS
+├── AGENTS.md                    ← reglas persistentes para Codex
+├── .agents/skills/              ← adaptadores Codex (descubrimiento; sin lógica duplicada)
+├── .claude/skills/              ← fuente canónica de los skills para ambos agentes
 │   ├── gtm-onboard/             SKILL.md + LEARNINGS.md
 │   ├── gtm-check-contact/
 │   ├── gtm-pain-segments/
@@ -55,7 +57,8 @@ unprospect-gtm/
 │   ├── gtm-copy/
 │   ├── gtm-experiments/
 │   ├── gtm-reply-analysis/
-│   └── gtm-retro/
+│   ├── gtm-retro/
+│   └── ...                      16 skills activos en total
 ├── workspaces/
 │   ├── _template/               ← plantilla para clientes nuevos (copiar y renombrar)
 │   └── unprospect/              ← tu propio workspace
@@ -69,6 +72,10 @@ unprospect-gtm/
 ├── scripts/                     ← sync con Instantly, clasificación local
 └── segment_*.py                 ← clasificadores existentes (Supabase → subsegmentos)
 ```
+
+La compatibilidad es aditiva: Claude Code sigue leyendo `.claude/skills/`. Codex descubre
+`.agents/skills/`, y cada adaptador carga el workflow canónico correspondiente. El checker
+`scripts/check_agent_compat.py` impide que aparezca un skill en un harness y falte en el otro.
 
 ## 4. Capa de memoria en Supabase
 
@@ -92,7 +99,7 @@ Tres niveles de memoria, del más volátil al más destilado:
 
 1. **Datos crudos (Supabase):** cada envío, cada reply, cada métrica. Nunca se resume, siempre consultable.
 2. **Memoria de workspace (`workspaces/<ws>/LEARNINGS.md` y `ANGLES.md`):** qué ángulos/dolores/segmentos funcionan *para este cliente*. Lo actualiza `/gtm-retro` y `/gtm-reply-analysis`.
-3. **Memoria de skill (`.claude/skills/<skill>/LEARNINGS.md`):** qué funciona *como método*, independiente del cliente (ej. "los lead magnets de benchmark superan a los templates en logística"). Cada skill lee el suyo al arrancar y agrega entradas al terminar.
+3. **Memoria de skill (`.claude/skills/<skill>/LEARNINGS.md`):** qué funciona *como método*, independiente del cliente (ej. "los lead magnets de benchmark superan a los templates en logística"). Es canónica y compartida por Claude Code y Codex; cada skill la lee al arrancar y agrega entradas al terminar.
 
 Contrato de todo skill:
 - **Al empezar:** leer su `LEARNINGS.md` + el `PROFILE.md` y `LEARNINGS.md` del workspace activo.
@@ -100,7 +107,7 @@ Contrato de todo skill:
 
 ## 6. Separación por cliente
 
-- Un cliente nuevo = copiar `workspaces/_template/` → `workspaces/<cliente>/` y correr `/gtm-onboard <cliente> <website>`.
+- Un cliente nuevo = copiar `workspaces/_template/` → `workspaces/<cliente>/` y correr `/gtm-onboard <cliente> <website>` en Claude Code o `$gtm-onboard <cliente> <website>` en Codex.
 - Todas las tablas de Supabase llevan columna `workspace` — un solo esquema, datos separados por filas.
 - Los skills piden el workspace como primer argumento; si no se da, asumen `unprospect`.
 - El conocimiento *transferible entre clientes* sube al `LEARNINGS.md` del skill; lo *específico del cliente* se queda en su workspace.

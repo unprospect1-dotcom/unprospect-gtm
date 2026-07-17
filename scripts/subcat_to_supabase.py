@@ -7,6 +7,7 @@
 - verify: setea subcat_verify y subcat_agree = (subcat == subcat_verify).
 - Solo actualiza filas existentes del niche (PATCH por dominio en lotes vía upsert
   merge-duplicates con las columnas provistas — las demás columnas no se tocan).
+- Requiere las columnas de `supabase/migrations/008_operational_signals.sql`.
 """
 import argparse
 import glob

@@ -17,8 +17,7 @@ Uso:
 Flags: --region (default mx), --chunk (default 1500), --results-limit (default 1),
   --tokens-env (default "APIFY_TOKEN2,APIFYTOKEN3"). Persiste a list_companies:
   ads_checked (bool), ads_runs (bool), ads_last_shown (date), ads_formats (text).
-Columnas: se crean con `alter table ... add column if not exists` (requiere SUPABASE_TOKEN),
-  si no, se asumen existentes.
+Columnas: definidas en `supabase/migrations/008_operational_signals.sql`.
 """
 import argparse
 import json
@@ -100,9 +99,7 @@ def persist(base, key, doms, items):
     return len(adv)
 
 
-# Columnas requeridas en list_companies (crear una vez si no existen):
-#   ads_checked boolean, ads_runs boolean, ads_last_shown date, ads_formats text
-# (via Supabase Management API con SUPABASE_TOKEN, o SQL manual.)
+# Columnas requeridas en list_companies: ver migración 008_operational_signals.sql.
 
 
 def main():

@@ -1,5 +1,10 @@
 # Capa de señales — Contratación de roles comerciales (Apify → calificador → Instantly)
 
+> **Documento histórico, no ejecutar.** Fue reemplazado por `JOB-SIGNALS.md` y conserva
+> decisiones/copy del prototipo anterior únicamente como contexto. La versión activa busca
+> empresas basadas en LATAM, permite prospección nacional o internacional y no usa el
+> copywriter descrito aquí.
+
 > Diseño del flujo automático semanal. Estado: **borrador para aprobación** (2026-07-15).
 > Tesis: si una empresa está **contratando** un rol de prospección/ventas, está invirtiendo
 > justo donde Unprospect vende ("el poder operativo de un equipo entero a una fracción del

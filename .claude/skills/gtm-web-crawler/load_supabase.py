@@ -12,11 +12,14 @@ Uso:
 import os, sys, json, glob, gzip, argparse, time, re
 import requests
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from clean_markdown import clean_markdown
+from clean_markdown import CLEAN_VERSION, attach_evidence_to_pages, build_segmentation_context
+from supabase_auth import resolve_service_key
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 MGMT_TOKEN = os.environ.get("SUPABASE_TOKEN", "")
+SERVICE_KEY = resolve_service_key(SUPABASE_URL,
+                                  os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+                                  MGMT_TOKEN)
 REF = re.search(r"https://([a-z0-9]+)\.supabase", SUPABASE_URL).group(1)
 
 DDL = """
@@ -29,8 +32,12 @@ create table if not exists site_crawls (
   http_status text,
   pages jsonb,
   combined_markdown text,
+  clean_text text,
   crawled_at timestamptz not null default now()
 );
+alter table site_crawls add column if not exists clean_text text;
+alter table site_crawls enable row level security;
+grant select, insert, update on table site_crawls to service_role;
 create index if not exists site_crawls_ok_idx on site_crawls(ok);
 """
 
@@ -61,26 +68,37 @@ def upsert(rows):
                 raise
             time.sleep(2 ** attempt)
 
+
 def to_row(d):
     raw = d.get("combined_markdown") or ""
+    clean_meta = d.get("clean_meta") or {}
+    pages = d.get("pages") or None
+    if d.get("clean_text") and clean_meta.get("version") == CLEAN_VERSION:
+        compact = d["clean_text"]
+    else:
+        analysis = build_segmentation_context(raw)
+        compact = analysis["text"]
+        pages = attach_evidence_to_pages(pages, analysis["meta"])
     return {"domain": d["domain"], "ok": d["ok"], "n_pages": d.get("n_pages", 0),
             "secs": d.get("secs"), "reason": d.get("reason"),
-            "pages": d.get("pages") or None,
+            "pages": pages,
             "combined_markdown": raw or None,
-            "clean_text": clean_markdown(raw) or None}
+            "clean_text": compact or None}
 
 def read_records(path):
     if os.path.isdir(path):
         for f in glob.glob(os.path.join(path, "*.json")):
-            yield json.load(open(f))
+            with open(f, encoding="utf-8") as handle:
+                yield json.load(handle)
     elif path.endswith(".gz"):
         for line in gzip.open(path, "rt", encoding="utf-8"):
             if line.strip():
                 yield json.loads(line)
     else:
-        for line in open(path):
-            if line.strip():
-                yield json.loads(line)
+        with open(path, encoding="utf-8-sig") as handle:
+            for line in handle:
+                if line.strip():
+                    yield json.loads(line)
 
 def main():
     ap = argparse.ArgumentParser()

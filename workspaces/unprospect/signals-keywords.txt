@@ -1,43 +1,95 @@
-# Keywords del harvest semanal de señales de contratación (LinkedIn Jobs MX).
-# Confirmado por el usuario 2026-07-15. Una keyword por línea; el script arma
-# una URL de búsqueda por cada una (location=Mexico, f_TPR=r604800). Dedupe por job_id.
-# tier1 = señal directa de prospección/nuevo negocio; tier2 = comercial general;
-# adj = marketing de crecimiento/demand gen (fit MEDIO salvo outbound explícito).
+# Keywords del harvest semanal de señales de contratación (LinkedIn Jobs LATAM).
+# Una keyword por línea; el script arma una URL por término con la ubicación configurada
+# (México en la fase actual) y f_TPR=r604800. El orden intercala inglés, español y portugués para reducir sesgo
+# cuando un proveedor corta la corrida antes de recorrer toda la lista.
 
-# --- tier1 ---
+# --- señal directa: desarrollo de ventas / nuevos negocios ---
 SDR
+representante de desarrollo de ventas
+representante de desenvolvimento de vendas
 BDR
+ejecutivo de desarrollo de negocios
+executivo de novos negócios
 sales development representative
+ejecutivo de nuevos negocios
+desenvolvimento de negócios
 business development representative
+hunter comercial
+executivo de contas hunter
 business development manager
-desarrollo de negocios
-desarrollo de nuevos negocios
-desarrollo comercial
-desarrollo de mercado
-hunter
-ventas hunter
+gerente de nuevos negocios
+novos negócios
+new business manager
+
+# --- prospección y generación de oportunidades ---
 prospección
-prospectador
-generación de leads
-generación de demanda
-demand generation
+prospecção comercial
 lead generation
+ejecutivo de prospección
+especialista de prospección
+prospecção
+generación de leads
+geração de leads
+demand generation
+generación de demanda
+geração de demanda
 outbound
+cold calling
+cold email
+appointment setter
+concertador de citas
+generación de citas
+telemarketing B2B
+ventas telefónicas B2B
+
+# --- apertura de cuentas y mercados ---
 apertura de cuentas
+abertura de contas
 apertura de mercado
-alianzas comerciales
-alianzas estratégicas
+abertura de mercado
+desarrollo de mercado
+desenvolvimento de mercado
+market development
+desarrollo de cartera nueva
+captación de clientes B2B
+client acquisition
+ventas hunter
+hunter
+
+# --- ventas B2B corporativas, técnicas e industriales ---
+ejecutivo comercial B2B
+executivo comercial B2B
+ventas corporativas
+vendas corporativas
+ventas empresariales
+ventas institucionales
+ventas industriales
+vendas industriais
+ventas técnicas
+vendas técnicas
+ingeniero de ventas
+engenheiro de vendas
+ingeniero comercial
 inside sales
 ventas internas
+vendas internas
+representante de ventas B2B
+sales executive B2B
 
-# --- tier2 ---
+# --- canales, alianzas y roles comerciales amplios ---
+desarrollo de canales
+desenvolvimento de canais
+alianzas comerciales
+alianzas estratégicas
+partnerships
+strategic partnerships
+desarrollo comercial
+desenvolvimento comercial
 ventas B2B
-comercial
+vendas B2B
 ejecutivo comercial
 ejecutivo de ventas
 representante de ventas
-asesor comercial
-asesor de ventas
 gerente comercial
 gerente de ventas
 director comercial
@@ -48,10 +100,9 @@ key account manager
 consultor comercial
 coordinador comercial
 expansión comercial
-partnerships
-strategic partnerships
 
-# --- adj (growth / demand gen) ---
+# --- adyacentes: revisar descripción antes de calificar ---
 growth
 growth marketing
 mercadotecnia de crecimiento
+marketing de crescimento

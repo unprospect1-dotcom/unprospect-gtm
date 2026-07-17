@@ -1,6 +1,6 @@
 ---
 name: gtm-ocean
-description: Listas lookalike con Ocean.io - dale 3-10 dominios de clientes reales y encuentra empresas similares por semantica de producto/servicio, luego las personas correctas dentro y sus emails verificados. Con presupuesto de creditos DURO (cada resultado de busqueda y cada email cuestan 1 credito). Sigue el contrato universal - warmup gratis de seeds, sondeo de conteo, muestra aprobada, y solo entonces gastar.
+description: Listas lookalike con Ocean.io - dale 3-10 dominios de clientes reales y encuentra empresas similares por semantica de producto/servicio, luego las personas correctas dentro y sus emails verificados. Con presupuesto de creditos DURO (company search medido en 0.2 créditos/resultado; reveal de email en 1). Sigue el contrato universal - warmup gratis de seeds, sondeo de conteo, muestra aprobada, y solo entonces gastar.
 argument-hint: <workspace> <dominios seed separados por coma | descripción>
 ---
 
@@ -13,11 +13,11 @@ argument-hint: <workspace> <dominios seed separados por coma | descripción>
 4. **Consulta el saldo (`balance`) SIEMPRE al arrancar.** Reporta: saldo, `dailyLimitRateLeft`, y cuánto permite gastar esta corrida según `credit_budget` (max_per_run, sin bajar de reserve).
 
 ## Economía de créditos (la regla de este skill)
-- **1 crédito por resultado devuelto** en search (companies y people) — pedir 500 resultados = 500 créditos, los quieras o no.
+- **0.2 créditos por empresa devuelta** en company search (medido 2026-07-14: 1,120 resultados = 226 créditos). Para people search, usa el costo reportado por la respuesta/saldo y presupuesta conservadoramente si no está medido.
 - **1 crédito por email verificado** en reveal.
 - Lista de N personas con email ≈ **hasta 2×N créditos**. Con el saldo actual, di siempre el costo estimado ANTES de cada llamada que gaste.
 - Gratis: `warmup` de seeds y el `enrich-company` que responde 201 (dominio en crawl).
-- Por eso el flujo es: gratis → 1 crédito → muestra pequeña → aprobación → gasto real.
+- Por eso el flujo es: gratis → sondeo barato → muestra pequeña → aprobación → gasto real.
 
 ## Referencia técnica
 - **Catálogo completo de filtros, playbook y valores (46 categorías propias + 248 industrias LinkedIn, 24 deptos, seniorities, tamaños): `FILTERS.md` en este directorio. Consúltalo antes de armar cualquier query.**
@@ -51,10 +51,10 @@ Pide/toma los 3–10 dominios seed (clientes reales del workspace > logos aspira
 ### 2. Warmup (gratis)
 Corre `warmup` con los seeds. Si algún seed no está en la DB de Ocean, espera el crawl (2–5 min) antes de buscar — un seed vacío degrada todo el lookalike.
 
-### 3. Sondeo de conteo (1 crédito)
-Búsqueda con `size: 1` (`search.count_probe_size`) para ver el total disponible. Presenta: total, costo estimado de la lista que el usuario quiere (N búsqueda + ~N reveal), saldo restante proyectado. **Espera aprobación del presupuesto.** Si excede `credit_budget.max_per_run` o dejaría el saldo bajo `reserve`, proponlo en tandas.
+### 3. Sondeo de conteo (~0.2 créditos en company search)
+Búsqueda con `size: 1` (`search.count_probe_size`) para ver el total disponible. Presenta: total, costo estimado de la lista que el usuario quiere (company search a 0.2/resultado medido + people search según respuesta + ~1 por email revelado), saldo restante proyectado. **Espera aprobación del presupuesto.** Si excede `credit_budget.max_per_run` o dejaría el saldo bajo `reserve`, proponlo en tandas.
 
-### 4. Muestra de aprobación (~25 créditos)
+### 4. Muestra de aprobación (~5 créditos para 25 empresas; people search se cotiza aparte)
 Trae `defaults.sample_size` empresas/personas y muéstralas en tabla. Correcciones → ajusta filtros (excludeDomains para falsos positivos, jobTitles más precisos) → re-muestra. **Dos rondas limpias = filtros bloqueados.** Cada re-muestra cuesta — dilo y cuenta el gasto acumulado.
 
 ### 5. Dedupe antes del gasto grande

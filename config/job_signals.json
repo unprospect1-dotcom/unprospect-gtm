@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "workspace": "unprospect",
+  "source": "linkedin_jobs",
+  "geography": {
+    "company_base_region": "latin_america",
+    "search_locations": [
+      "Mexico"
+    ],
+    "service_territory": "global",
+    "supported_prospecting_scopes": [
+      "national",
+      "regional_latam",
+      "international",
+      "mixed"
+    ],
+    "languages": [
+      "es",
+      "pt",
+      "en"
+    ],
+    "job_location_qualifies_company_region": false
+  },
+  "harvest": {
+    "actor_id": "curious_coder~linkedin-jobs-scraper",
+    "keywords_file": "workspaces/unprospect/signals-keywords.txt",
+    "freshness_seconds": 604800,
+    "max_results": 500,
+    "scrape_company": true,
+    "split_by_location": false,
+    "estimated_usd_per_result": 0.001,
+    "hard_budget_usd": 1.0,
+    "token_env_names": [
+      "APIFY_TOKEN",
+      "APIFY_TOKEN2",
+      "APIFYTOKEN3"
+    ]
+  },
+  "analysis": {
+    "excerpt_max_chars": 6000,
+    "evidence_sentence_limit": 12,
+    "final_fit_requires_llm_or_human": true,
+    "copy_module": null
+  },
+  "contact": {
+    "small_company_employee_max": 20,
+    "verified_email_statuses": [
+      "VERIFIED",
+      "verified",
+      "valid"
+    ],
+    "recontact_after_days": 90,
+    "paid_enrichment_enabled": false
+  },
+  "sending": {
+    "enabled": false,
+    "provider": null,
+    "require_human_approval": true,
+    "sequence_steps": 2
+  }
+}

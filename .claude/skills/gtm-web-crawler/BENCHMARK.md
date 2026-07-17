@@ -1,5 +1,40 @@
 # BENCHMARK — por qué crawl4ai (y qué se descartó)
 
+## Optimización masiva 2026-07-17 — HTTP primero, Chromium selectivo
+
+La elección de motor no cambió: ambas capas son Crawl4AI 0.9.2 y producen el mismo
+markdown, filtro de densidad y cleaner. Lo que cambió fue cuándo pagamos el navegador.
+
+El wrapper anterior hacía home con Chromium y, si faltaban señales, lanzaba un deep crawl
+que volvía a pedir el home antes de abrir una página interna. El supervisor además cerraba
+Chrome cada 3 dominios. Para `max-pages=2` eso podía significar tres navegaciones y un nuevo
+proceso de Chrome por ola.
+
+La cascada nueva hace:
+
+1. home mediante `AsyncHTTPCrawlerStrategy`;
+2. si falta contexto, una página interna elegida por señal GTM;
+3. Chromium sólo si el HTML es una shell JS/thin;
+4. espera+scroll limitado sólo si el primer render también queda vacío.
+
+Resultados reales:
+
+| prueba | anterior | cascada 0.9.2 |
+|---|---:|---:|
+| muestra mixta de 10 dominios | varios corridos individualmente | **10/10 en 17.4 s de pared** |
+| `21sthr.com` | 147.8 s / 1,147 clean chars | **16.5 s / los mismos 1,147** |
+| `7-eleven.com.mx` | 106.6 s / 2 páginas | **7.7 s / 2 páginas**; mismos 50 assets visuales, sin inflar clean con el aviso de privacidad |
+| `212.com.mx` HTTP aislado | 7.2 s con Chrome | **0.6–1.0 s**, 3,311 clean chars y las 6 categorías útiles |
+| muestra adicional de 20 | 12 sitios útiles en artefactos previos | **17 útiles**; los 3 fallos finales ya fallaban antes |
+
+La muestra adicional recuperó cinco falsos fallos anteriores. La regla de resume ahora
+salta éxitos, pero reintenta una vez los `ok:false`; el segundo fallo queda checkpointed.
+
+Nota del source upstream: `arun_many()` usa dispatchers eficientemente para URLs normales,
+pero cuando recibe `deep_crawl_strategy` lo evita y procesa las URLs iniciales en secuencia.
+Por eso este wrapper controla la concurrencia por dominio y abre directamente las pocas
+páginas internas elegidas, en vez de meter deep crawl dentro de `arun_many()`.
+
 Corrida 2026-07-09 sobre 8 dominios SOFOM reales. Chars = texto/markdown útil extraído.
 `L` = links internos descubiertos (capacidad de navegar secciones). `Y/.` = ok.
 

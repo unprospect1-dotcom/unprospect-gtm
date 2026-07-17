@@ -69,4 +69,23 @@ per-dominio confiables en los 762 restantes hay que re-correr la capa 1 a lotes 
 
 Cada subagente: (1) corre un fetch que baja clean_text de `site_crawls` a `ct_<dom>.txt`,
 (2) lee cada archivo, (3) clasifica con el rubro de PROMPT.md, (4) escribe un array JSON.
-Los verificadores van **ciegos** (no ven las etiquetas de la capa 1). Batch ~40 dominios/subagente.
+Los verificadores van **ciegos** (no ven las etiquetas de la capa 1). Batch máximo de
+12–15 dominios por subagente.
+
+## Validación Codex GPT-5.4 Mini — 2026-07-16
+
+Prueba controlada con dos subagentes ciegos `gpt-5.4-mini`, esfuerzo `low`, sobre 8 casos
+del golden deliberadamente cargados de fronteras: 3 b2b, 3 b2c y 2 mixed.
+
+- Con el prompt anterior, ambos agentes coincidieron 8/8 entre sí pero solo 6/8 contra el
+  golden. Los dos errores fueron sistemáticos: `afalianza.com` se fue a b2b en vez de mixed
+  y `patrimonio.com.mx` a mixed en vez de b2c.
+- Agregar las reglas 9 y 10 de prominencia corrigió ambos casos: los dos agentes quedaron
+  8/8 contra el golden y 8/8 entre sí. Es una muestra pequeña; antes de corrida masiva hay
+  que repetir en una muestra mayor y variada.
+- La evidencia necesita validación literal automática. En Windows PowerShell 5,
+  `Get-Content` sin `-Encoding UTF8` puede mostrar texto sano como mojibake
+  (`nómina` → `nÃ³mina`). Un worker leyó así el archivo y devolvió citas no literales.
+  El `clean_text` original estaba bien al comprobar sus bytes como UTF-8. No aceptar
+  evidencia sin comprobar que la cita esté contenida en el `clean_text`, y leer siempre
+  los archivos con UTF-8 explícito.

@@ -1,6 +1,6 @@
 ---
 name: gtm-web-crawler
-description: Rastrea sitios con render de JavaScript y genera clean_text para clasificación, enrichment y segmentación.
+description: Rastrea sitios con Crawl4AI HTTP primero y JavaScript selectivo; genera clean_text para clasificación, enrichment y segmentación.
 ---
 
 # Adaptador Codex

@@ -67,9 +67,10 @@ canónicos desde `.claude/skills/`. Esto preserva Claude Code y elimina drift de
 
 ### Límite conocido
 
-`gtm-web-crawler/setup.sh` asume Bash/Linux, `apt-get`, un Chromium preinstalado y una topología de
-proxy específica. Codex en Windows necesita WSL o un contenedor. El resto de los adaptadores no depende
-de un shell específico, salvo comandos `python3` que Codex debe traducir a `python` en Windows.
+`gtm-web-crawler/setup.sh` conserva el bootstrap Bash/Linux. En Codex Desktop/Windows,
+`setup.ps1` crea `.venv-win` y reutiliza Chrome o Edge instalado; no requiere simular `apt-get`.
+El resto de los adaptadores no depende de un shell específico, salvo comandos `python3` que Codex
+debe traducir a `python` en Windows.
 
 ## Auditoría de los 16 skills activos
 

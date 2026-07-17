@@ -1,6 +1,8 @@
 import importlib.util
+import json
 from pathlib import Path
 import sys
+import tempfile
 import types
 import unittest
 
@@ -35,16 +37,57 @@ class CrawlSupervisorTests(unittest.TestCase):
         self.assertTrue(self.crawl.browser_is_unavailable(result))
         self.assertFalse(self.crawl.browser_is_unavailable({"error": "ERR_NAME_NOT_RESOLVED"}))
 
+    def test_high_value_links_prioritize_proof_and_stay_on_domain(self):
+        result = types.SimpleNamespace(
+            url="https://example.mx/",
+            links={"internal": [
+                {"href": "https://example.mx/contacto", "text": "Contacto"},
+                {"href": "https://example.mx/casos/cliente-a", "text": "Caso Cliente A"},
+                {"href": "https://example.mx/servicios", "text": "Servicios"},
+                {"href": "https://evil.test/casos", "text": "Casos externos"},
+                {"href": "https://example.mx/logo.svg", "text": "Logo"},
+            ]},
+        )
+        links = self.crawl.select_high_value_links(result, "example.mx", 3)
+        self.assertEqual(links[0], "https://example.mx/casos/cliente-a")
+        self.assertIn("https://example.mx/servicios", links)
+        self.assertNotIn("https://evil.test/casos", links)
+        self.assertNotIn("https://example.mx/logo.svg", links)
+
+    def test_resume_retries_one_old_failure_but_not_success(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            failed = Path(tmp) / "failed.json"
+            failed.write_text(json.dumps({"ok": False}), encoding="utf-8")
+            self.assertEqual(self.crawl.resume_state(str(failed), max_attempts=2), (True, 1))
+            failed.write_text(
+                json.dumps({"ok": False, "crawl_attempts": 2}), encoding="utf-8"
+            )
+            self.assertEqual(self.crawl.resume_state(str(failed), max_attempts=2), (False, 2))
+
+            success = Path(tmp) / "success.json"
+            success.write_text(json.dumps({"ok": True}), encoding="utf-8")
+            self.assertEqual(self.crawl.resume_state(str(success), max_attempts=2), (False, 1))
+
+    def test_segmentation_gate_requires_offer_audience_and_context(self):
+        base = {"ok": True, "clean_text": "x" * 400, "clean_meta": {}}
+        base["clean_meta"]["context_categories"] = ["offer", "audience", "proof"]
+        self.assertTrue(self.crawl._home_is_enough(base))
+        base["clean_meta"]["context_categories"] = ["offer", "proof"]
+        self.assertFalse(self.crawl._home_is_enough(base))
+
     def test_worker_command_has_unique_shard(self):
         args = types.SimpleNamespace(
             python="python", input="domains.txt", out="crawl_out", max_pages=2,
-            depth=1, concurrency_per_worker=3, domain_timeout=45, workers=2,
-            cycle_size=20, supabase=True,
+            depth=1, concurrency_per_worker=3, http_concurrency_per_worker=12,
+            domain_timeout=45, max_attempts=2, workers=2, cycle_size=20,
+            supabase=True,
         )
         command = self.supervisor.build_worker_command(args, 1)
         self.assertEqual(command[command.index("--shard-count") + 1], "2")
         self.assertEqual(command[command.index("--shard-index") + 1], "1")
         self.assertEqual(command[command.index("--cycle-size") + 1], "20")
+        self.assertEqual(command[command.index("--http-concurrency") + 1], "12")
+        self.assertEqual(command[command.index("--max-attempts") + 1], "2")
         self.assertIn("--supabase", command)
         self.assertIn("--skip-ensure-table", command)
 

@@ -44,7 +44,8 @@ Fuentes oficiales:
 
 ## Límites conocidos
 
-- `gtm-web-crawler/setup.sh` es POSIX/Linux. Codex en Windows necesita WSL o contenedor.
+- `gtm-web-crawler/setup.sh` es POSIX/Linux; en Codex Desktop/Windows se usa `setup.ps1`,
+  que crea `.venv-win` y reutiliza Chrome o Edge instalado.
 - Los nombres de modelos son sugerencias de costo/capacidad, no IDs portables entre harnesses.
 - Los skills de `reference/coldoutboundskills/` siguen siendo referencia y no se exponen como skills
   activos de Codex.

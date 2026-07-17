@@ -4,12 +4,13 @@ Go to market OS for unprospect — un cold outbound machine con memoria y auto-a
 **Empieza por [ARCHITECTURE.md](ARCHITECTURE.md)** — ahí está el mapa completo del sistema.
 
 ## Componentes
-- `.claude/skills/gtm-*` — fuente canónica de los 16 skills activos para Claude Code, con su memoria y scripts.
+- `.claude/skills/gtm-*` — fuente canónica de los 17 skills activos para Claude Code, con su memoria y scripts.
 - `.agents/skills/gtm-*` — adaptadores de descubrimiento para Codex; reutilizan los skills canónicos sin duplicarlos.
 - `AGENTS.md` — reglas persistentes del repositorio para Codex.
 - `workspaces/` — memoria por cliente (`unprospect` activo; `_template/` para clientes nuevos).
 - `workspaces/unprospect/PROFILE.md` — fuente central de qué vende Unprospect, a quién y con qué evidencia.
 - `scripts/job_signals.py` — flujo semanal Apify → evidencia → análisis → buyer → cola de copy.
+- `.claude/skills/gtm-profile-company/` — dos pasadas ciegas baratas sobre `clean_text` para B2B, oferta, ICP probable y fit outbound.
 - `supabase/migrations/` — capa de memoria consultable (outreach_log, angles, campaigns, replies, v_last_contact).
 - `scripts/instantly_sync.py` — sincroniza envíos y replies de Instantly a Supabase.
 

@@ -21,6 +21,12 @@
 │  /gtm-onboard  →  lee website + fuentes, analiza el negocio  →  workspaces/<ws>/PROFILE.md │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
                                             │
+┌─────────────────────────────  BASE DE DATOS GTM (continuo)  ──────────────────────────────┐
+│  /gtm-web-crawler     →  HTTP rápido → JS selectivo + clean_text compacto                  │
+│  /gtm-profile-company →  B2B + oferta + cliente + ICP probable + fit outbound              │
+│  Dos pasadas ciegas   →  consenso automático; desacuerdos a revisión                       │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                                            │
 ┌─────────────────────────────  ESTRATEGIA (por ciclo)  ─────────────────────────────────────┐
 │  /gtm-pain-segments     →  segmentos por dolor observable      →  SEGMENTS.md + Supabase   │
 │  /gtm-offer-ideation    →  front-end offers / lead magnets     →  OFFERS.md                │
@@ -50,6 +56,8 @@ unprospect-gtm/
 ├── .agents/skills/              ← adaptadores Codex (descubrimiento; sin lógica duplicada)
 ├── .claude/skills/              ← fuente canónica de los skills para ambos agentes
 │   ├── gtm-onboard/             SKILL.md + LEARNINGS.md
+│   ├── gtm-web-crawler/         crawl + clean_text + recuperación ante caída de Chrome
+│   ├── gtm-profile-company/     B2B + ICP + economía comercial + fit outbound
 │   ├── gtm-check-contact/
 │   ├── gtm-pain-segments/
 │   ├── gtm-offer-ideation/
@@ -58,7 +66,7 @@ unprospect-gtm/
 │   ├── gtm-experiments/
 │   ├── gtm-reply-analysis/
 │   ├── gtm-retro/
-│   └── ...                      16 skills activos en total
+│   └── ...                      17 skills activos en total
 ├── workspaces/
 │   ├── _template/               ← plantilla para clientes nuevos (copiar y renombrar)
 │   └── unprospect/              ← tu propio workspace
@@ -92,6 +100,10 @@ La migración `supabase/migrations/001_outreach_memory.sql` agrega:
 | `companies.pain_signals` (jsonb) + `companies.pain_segment` | Señales de dolor observable por empresa y el segmento asignado. |
 
 Regla: **todo envío desde Instantly se refleja en `outreach_log`** (vía `scripts/instantly_sync.py` o al subir la campaña). Si no está en el log, no pasó.
+
+`gtm-profile-company` genera perfiles validados localmente y no persiste durante el loop de
+evaluación. Su tabla durable se agrega solo después de aprobar el esquema y una muestra mayor;
+así no se contaminan `companies` ni Supabase con una taxonomía todavía inestable.
 
 ## 5. Ciclo de auto-aprendizaje (cómo "se vuelve mejor cada que se usa")
 

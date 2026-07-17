@@ -10,6 +10,7 @@ Uso:
   python load_supabase.py --in data/sofoms_crawls.jsonl.gz
 """
 import os, sys, json, glob, gzip, argparse, time, re
+from datetime import datetime, timezone
 import requests
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from clean_markdown import CLEAN_VERSION, attach_evidence_to_pages, build_segmentation_context
@@ -83,7 +84,10 @@ def to_row(d):
             "secs": d.get("secs"), "reason": d.get("reason"),
             "pages": pages,
             "combined_markdown": raw or None,
-            "clean_text": compact or None}
+            "clean_text": compact or None,
+            # Postgres defaults only run on INSERT. Set this explicitly so an
+            # upsert records the latest crawl instead of keeping an old date.
+            "crawled_at": d.get("crawled_at") or datetime.now(timezone.utc).isoformat()}
 
 def read_records(path):
     if os.path.isdir(path):

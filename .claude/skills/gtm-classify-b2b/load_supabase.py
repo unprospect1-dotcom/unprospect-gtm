@@ -11,6 +11,7 @@ Formatos (una línea JSON por dominio):
   verify:   {domain,verify_label,confidence,evidence}
 """
 import os, sys, json, re, argparse, time, glob, requests
+from validate_evidence import find_evidence_failures
 
 U = os.environ["SUPABASE_URL"].rstrip("/"); K = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 TOK = os.environ.get("SUPABASE_TOKEN", "")
@@ -57,6 +58,31 @@ def upsert(rows):
             time.sleep(2 ** attempt)
     return len(rows)
 
+def fetch_clean_texts(domains):
+    """Fetch source text in chunks so model evidence can be checked before persistence."""
+    hdr = {"apikey": K, "Authorization": f"Bearer {K}"}
+    out = {}
+    domains = sorted(set(domains))
+    invalid = [domain for domain in domains if not re.fullmatch(r"[A-Za-z0-9.-]+", domain or "")]
+    if invalid:
+        raise RuntimeError(f"invalid domain value(s): {', '.join(invalid[:20])}")
+    for i in range(0, len(domains), 100):
+        chunk = domains[i:i+100]
+        r = requests.get(
+            f"{U}/rest/v1/site_crawls",
+            params={"select": "domain,clean_text", "domain": f"in.({','.join(chunk)})"},
+            headers=hdr,
+            timeout=120,
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(f"clean_text fetch {r.status_code}: {r.text[:200]}")
+        payload = r.json()
+        if not isinstance(payload, list):
+            raise RuntimeError("clean_text fetch returned a non-list payload")
+        for row in payload:
+            out[row.get("domain")] = row.get("clean_text")
+    return out
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--classify", required=True, help="archivo, glob (cls_*.jsonl) o directorio")
@@ -69,6 +95,14 @@ def main():
 
     C = read_jsonl(args.classify)
     V = read_jsonl(args.verify) if args.verify else {}
+    clean_texts = fetch_clean_texts(C)
+    evidence_failures = find_evidence_failures(C, V, clean_texts)
+    if evidence_failures:
+        preview = ", ".join(evidence_failures[:20])
+        suffix = " ..." if len(evidence_failures) > 20 else ""
+        raise RuntimeError(
+            f"evidence validation failed for {len(evidence_failures)} row(s): {preview}{suffix}"
+        )
     rows = []
     for dom, c in C.items():
         v = V.get(dom)

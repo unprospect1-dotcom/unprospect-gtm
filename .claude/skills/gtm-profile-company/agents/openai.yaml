@@ -1,0 +1,4 @@
+interface:
+  display_name: "GTM Company Profiler"
+  short_description: "Clasifica B2B, ICP y fit outbound desde clean_text"
+  default_prompt: "Usa $gtm-profile-company para perfilar estas empresas desde su clean_text y separar B2B de fit outbound."

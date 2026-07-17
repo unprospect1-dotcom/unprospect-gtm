@@ -2,9 +2,9 @@
 """gtm-web-crawler — dado un dominio, navega solo las secciones de alto valor y
 extrae markdown limpio para personalización de cold email.
 
-Motor: crawl4ai (render JS + markdown + deep-crawl priorizado). Un solo camino,
-robusto: rinde SPAs, navega secciones (nosotros/servicios/aviso de privacidad),
-$0 y self-host. Ver BENCHMARK.md para por qué este y no trafilatura/scrapy.
+Motor: Crawl4AI 0.9.2. Primero usa su crawler HTTP; abre Chromium sólo para
+SPAs/JS o señales faltantes y navega directamente las secciones de mayor valor.
+$0 y self-host. Ver BENCHMARK.md para las mediciones y decisiones.
 
 Uso:
   python crawl.py DOMINIO [DOMINIO...]           # uno o varios dominios
@@ -12,10 +12,10 @@ Uso:
   python crawl.py paya.com.mx --out salida --max-pages 6 --depth 1 --concurrency 4
 
 Salida: <out>/<dominio>.json con raw/fit recuperable, evidencia visual y clean_text compacto.
-Reanuda solo (--resume por defecto): si ya existe <dominio>.json, lo salta.
+Reanuda solo: salta éxitos y rescata una vez los fallos previos.
 """
 import argparse, asyncio, csv, hashlib, json, os, re, sys, time
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 import sandbox_browser as sb
 from clean_markdown import build_segmentation_context, extract_evidence_links, extract_visual_assets
 
@@ -60,6 +60,20 @@ HIGH_VALUE_KW = [
     "sectores", "industrias", "industries", "contacto", "contact",
 ]
 
+HIGH_VALUE_WEIGHTS = {
+    "casos": 120, "case-studies": 120, "case-study": 120,
+    "clientes": 110, "customers": 110, "testimonios": 105, "testimonials": 105,
+    "servicios": 95, "services": 95, "productos": 95, "products": 95,
+    "soluciones": 95, "solutions": 95, "industrias": 85, "industries": 85,
+    "sectores": 85, "nosotros": 75, "quienes-somos": 75, "about": 75,
+    "empresa": 65, "company": 65, "contacto": 20, "contact": 20,
+}
+
+SKIP_LINK_SUFFIXES = (
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico",
+    ".css", ".js", ".zip", ".rar", ".mp3", ".mp4", ".avi", ".mov",
+)
+
 def read_domains(args):
     doms = []
     if args.input:
@@ -85,40 +99,47 @@ def read_domains(args):
             seen.add(d); out.append(d)
     return out
 
-def build_run_config(domain, depth, max_pages):
-    from crawl4ai import CrawlerRunConfig, CacheMode
-    from crawl4ai.deep_crawling import (BestFirstCrawlingStrategy, FilterChain,
-                                        DomainFilter, KeywordRelevanceScorer)
+def _markdown_generator():
     from crawl4ai.content_filter_strategy import PruningContentFilter
     from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
-    strat = BestFirstCrawlingStrategy(
-        max_depth=depth, max_pages=max_pages,
-        url_scorer=KeywordRelevanceScorer(keywords=HIGH_VALUE_KW, weight=1.0),
-        filter_chain=FilterChain([DomainFilter(allowed_domains=[domain])]),
-    )
-    # filtro de densidad: tira menús/footers/boilerplate de baja densidad (-> fit_markdown)
-    mdgen = DefaultMarkdownGenerator(
-        content_filter=PruningContentFilter(threshold=0.48, threshold_type="fixed"))
-    return CrawlerRunConfig(
-        deep_crawl_strategy=strat, cache_mode=CacheMode.BYPASS,
-        markdown_generator=mdgen,
-        wait_until="domcontentloaded", delay_before_return_html=3.0,
-        page_timeout=45000, scan_full_page=True, verbose=False, stream=False,
+    return DefaultMarkdownGenerator(
+        content_filter=PruningContentFilter(threshold=0.48, threshold_type="fixed")
     )
 
 
-def build_home_config():
+def build_http_config():
     from crawl4ai import CrawlerRunConfig, CacheMode
-    from crawl4ai.content_filter_strategy import PruningContentFilter
-    from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
-    return CrawlerRunConfig(
+    from crawl4ai.async_configs import ProxyConfig
+    kwargs = {
+        "cache_mode": CacheMode.BYPASS,
+        "markdown_generator": _markdown_generator(),
+        "page_timeout": 15000,
+        "verbose": False,
+        "stream": False,
+    }
+    if sb.PROXY:
+        kwargs["proxy_config"] = ProxyConfig(server=sb.PROXY)
+    return CrawlerRunConfig(**kwargs)
+
+
+def build_browser_config(slow=False):
+    from crawl4ai import CrawlerRunConfig, CacheMode
+    from crawl4ai.async_configs import ProxyConfig
+    kwargs = dict(
         cache_mode=CacheMode.BYPASS,
-        markdown_generator=DefaultMarkdownGenerator(
-            content_filter=PruningContentFilter(threshold=0.48, threshold_type="fixed")
-        ),
-        wait_until="domcontentloaded", delay_before_return_html=1.5,
-        page_timeout=20000, scan_full_page=True, verbose=False,
+        markdown_generator=_markdown_generator(),
+        wait_until="domcontentloaded",
+        delay_before_return_html=1.5 if slow else 0.4,
+        page_timeout=30000 if slow else 20000,
+        scan_full_page=bool(slow),
+        max_scroll_steps=6 if slow else None,
+        scroll_delay=0.05,
+        verbose=False,
+        stream=False,
     )
+    if sb.PROXY:
+        kwargs["proxy_config"] = ProxyConfig(server=sb.PROXY)
+    return CrawlerRunConfig(**kwargs)
 
 
 def _page_from_result(result):
@@ -170,50 +191,120 @@ def _finalize(domain, pages, started_at, fallback=None):
     return out
 
 
-async def crawl_one(crawler, domain, depth, max_pages):
-    t0 = time.time()
-    try:
-        results = await crawler.arun(f"https://{domain}", config=build_run_config(domain, depth, max_pages))
-        if not isinstance(results, list):
-            results = [results]
-        pages, seen_paths, seen_content = [], set(), set()
-        for r in results:
-            page = _page_from_result(r)
-            if not page:
-                continue
-            key = page["path"]
-            # Dedupe estable sobre TODO el contenido. Los primeros 500 chars suelen ser el
-            # mismo header y antes podían tirar páginas distintas con información útil.
-            normalized = " ".join(page["markdown"].split())
-            sig = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-            if key in seen_paths or sig in seen_content:
-                continue
-            seen_paths.add(key); seen_content.add(sig)
-            pages.append(page)
-        return _finalize(domain, pages, t0)
-    except Exception as e:
-        return {"domain": domain, "ok": False, "n_pages": 0,
-                "secs": round(time.time() - t0, 1), "error": str(e)[:200],
-                "pages": [], "combined_markdown": ""}
+def _normalized_host(value):
+    return (value or "").lower().split(":")[0].removeprefix("www.")
 
 
-async def crawl_home(crawler, domain, fallback):
-    t0 = time.time()
-    errors = []
+def select_high_value_links(result, domain, limit):
+    """Elige pocas páginas útiles sin volver a recorrer el home ni salir del sitio."""
+    if limit <= 0:
+        return []
+    links = (getattr(result, "links", None) or {}).get("internal", [])
+    result_url = getattr(result, "url", "") or f"https://{domain}"
+    allowed_hosts = {
+        _normalized_host(domain),
+        _normalized_host(urlparse(result_url).hostname),
+    }
+    scored, seen = [], set()
+    for item in links:
+        if isinstance(item, str):
+            href, text = item, ""
+        else:
+            href = (item or {}).get("href") or ""
+            text = " ".join(str((item or {}).get(key) or "")
+                            for key in ("text", "title", "base_domain"))
+        if not href:
+            continue
+        href = urljoin(result_url, href).split("#", 1)[0]
+        parsed = urlparse(href)
+        if parsed.scheme not in {"http", "https"}:
+            continue
+        if _normalized_host(parsed.hostname) not in allowed_hosts:
+            continue
+        lowered_path = (parsed.path or "/").lower().rstrip("/") or "/"
+        if lowered_path == "/" or lowered_path.endswith(SKIP_LINK_SUFFIXES):
+            continue
+        canonical = f"{parsed.scheme}://{parsed.netloc}{lowered_path}"
+        if canonical in seen:
+            continue
+        haystack = f"{lowered_path} {text.lower()}"
+        score = sum(weight for keyword, weight in HIGH_VALUE_WEIGHTS.items()
+                    if keyword in haystack)
+        if score <= 0:
+            continue
+        # A igualdad de señal, preferimos URLs simples y páginas HTML.
+        score -= lowered_path.count("/")
+        if lowered_path.endswith(".pdf"):
+            score -= 40
+        seen.add(canonical)
+        scored.append((score, href))
+    scored.sort(key=lambda item: (-item[0], len(item[1]), item[1]))
+    return [href for _, href in scored[:limit]]
+
+
+def _append_unique_page(pages, page, seen_paths, seen_content):
+    if not page:
+        return False
+    normalized = " ".join(page["markdown"].split())
+    signature = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    if page["path"] in seen_paths or signature in seen_content:
+        return False
+    seen_paths.add(page["path"])
+    seen_content.add(signature)
+    pages.append(page)
+    return True
+
+
+async def crawl_site(crawler, domain, config, max_pages, fallback=None):
+    """Home una sola vez; sólo abre páginas internas si faltan señales de segmentación."""
+    started_at = time.time()
+    pages, seen_paths, seen_content, errors = [], set(), set(), []
+    candidates, home_scheme = [], None
     for scheme in ("https", "http"):
         try:
-            result = await crawler.arun(f"{scheme}://{domain}", config=build_home_config())
-            results = result if isinstance(result, list) else [result]
-            pages = [page for page in (_page_from_result(item) for item in results) if page]
+            raw_result = await crawler.arun(f"{scheme}://{domain}", config=config)
+            results = raw_result if isinstance(raw_result, list) else [raw_result]
+            for result in results:
+                if not getattr(result, "success", False):
+                    error = getattr(result, "error_message", "") or "crawl_failed"
+                    errors.append(str(error)[:160])
+                    continue
+                page = _page_from_result(result)
+                if _append_unique_page(pages, page, seen_paths, seen_content):
+                    candidates = select_high_value_links(
+                        result, domain, max(0, max_pages - 1)
+                    )
+                    home_scheme = scheme
+                    break
+                errors.append("no_usable_content")
             if pages:
-                out = _finalize(domain, pages[:1], t0, fallback=fallback)
-                out["home_scheme"] = scheme
-                return out
+                break
         except Exception as exc:
-            errors.append(str(exc)[:100])
-    out = _finalize(domain, [], t0, fallback=fallback)
-    if errors:
-        out["error"] = " | ".join(errors)[:200]
+            errors.append(str(exc)[:160])
+
+    interim = _finalize(domain, pages, started_at, fallback=fallback)
+    if pages and max_pages > 1 and not _home_is_enough(interim):
+        for href in candidates:
+            if len(pages) >= max_pages:
+                break
+            try:
+                raw_result = await crawler.arun(href, config=config)
+                results = raw_result if isinstance(raw_result, list) else [raw_result]
+                for result in results:
+                    if getattr(result, "success", False):
+                        _append_unique_page(
+                            pages, _page_from_result(result), seen_paths, seen_content
+                        )
+                    else:
+                        errors.append(str(getattr(result, "error_message", ""))[:160])
+            except Exception as exc:
+                errors.append(str(exc)[:160])
+
+    out = _finalize(domain, pages, started_at, fallback=fallback)
+    if home_scheme:
+        out["home_scheme"] = home_scheme
+    if errors and not pages:
+        out["error"] = " | ".join(error for error in errors if error)[:400]
     return out
 
 
@@ -227,28 +318,63 @@ def _home_is_enough(result):
         and bool(categories & {"identity", "industry", "proof"})
     )
 
+
+def resume_state(path, no_resume=False, max_attempts=2):
+    """Los éxitos se saltan; un fallo viejo recibe un único intento de rescate."""
+    if no_resume or not os.path.exists(path):
+        return True, 0
+    try:
+        with open(path, encoding="utf-8") as handle:
+            previous = json.load(handle)
+    except (OSError, ValueError):
+        return True, 0
+    attempts = max(1, int(previous.get("crawl_attempts") or 1))
+    if previous.get("ok"):
+        return False, attempts
+    return attempts < max_attempts, attempts
+
+
+def should_try_slow_browser(result):
+    error = str((result or {}).get("error") or "").lower()
+    return not result.get("ok") and (not error or any(marker in error for marker in (
+        "anti-bot", "script_heavy", "minimal_text", "no_content", "no_usable_content",
+        "timeout", "acs-goto", "navigation", "crawl_failed",
+    )))
+
 async def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("domains", nargs="*")
     ap.add_argument("--input")
     ap.add_argument("--out", default="crawl_out")
-    ap.add_argument("--max-pages", type=int, default=6)
+    ap.add_argument("--max-pages", type=int, default=2)
     ap.add_argument("--depth", type=int, default=1)
     ap.add_argument("--concurrency", type=int, default=4)
-    ap.add_argument("--domain-timeout", type=int, default=180,
-                    help="segundos máximos por dominio completo (def 180).")
+    ap.add_argument("--http-concurrency", type=int, default=12,
+                    help="requests HTTP ligeros en paralelo (def 12).")
+    ap.add_argument("--domain-timeout", type=int, default=60,
+                    help="segundos máximos por etapa de un dominio (def 60).")
     ap.add_argument("--shard-count", type=int, default=1,
                     help="número total de workers con listas separadas (def 1).")
     ap.add_argument("--shard-index", type=int, default=0,
                     help="índice de este worker, desde 0 (def 0).")
     ap.add_argument("--cycle-size", type=int, default=0,
                     help="cerrar Chrome tras N dominios; 0 procesa todos (def 0).")
+    ap.add_argument("--max-attempts", type=int, default=2,
+                    help="intentos totales por dominio fallido (def 2).")
+    ap.add_argument("--http-only", action="store_true",
+                    help="no abrir Chrome; útil para medir la primera capa.")
     ap.add_argument("--no-resume", action="store_true")
     ap.add_argument("--supabase", action="store_true",
                     help="persistir cada resultado a la tabla site_crawls (requiere SUPABASE_*).")
     ap.add_argument("--skip-ensure-table", action="store_true",
                     help=argparse.SUPPRESS)
     args = ap.parse_args()
+    if args.max_pages < 1:
+        ap.error("--max-pages debe ser >= 1")
+    if args.concurrency < 1 or args.http_concurrency < 1:
+        ap.error("--concurrency y --http-concurrency deben ser >= 1")
+    if args.max_attempts < 1:
+        ap.error("--max-attempts debe ser >= 1")
 
     sink = None
     if args.supabase:
@@ -268,11 +394,18 @@ async def main():
 
     sb.bootstrap_nss()
     sb.patch_crawl4ai()
-    from crawl4ai import AsyncWebCrawler, BrowserConfig
+    from crawl4ai import AsyncWebCrawler, BrowserConfig, HTTPCrawlerConfig
     from crawl4ai.async_configs import ProxyConfig
+    from crawl4ai.async_crawler_strategy import AsyncHTTPCrawlerStrategy
+    from crawl4ai.__version__ import __version__ as crawl4ai_version
 
-    all_todo = [d for d in domains if args.no_resume or
-                not os.path.exists(os.path.join(args.out, f"{d}.json"))]
+    resume = {}
+    for domain in domains:
+        output_path = os.path.join(args.out, f"{domain}.json")
+        resume[domain] = resume_state(
+            output_path, no_resume=args.no_resume, max_attempts=args.max_attempts
+        )
+    all_todo = [domain for domain, (should_run, _) in resume.items() if should_run]
     more_after_cycle = args.cycle_size > 0 and len(all_todo) > args.cycle_size
     todo = all_todo[:args.cycle_size] if args.cycle_size > 0 else all_todo
     print(
@@ -280,67 +413,119 @@ async def main():
         f"{len(all_todo)} pendientes; lote actual {len(todo)})",
         flush=True,
     )
+    if not todo:
+        return 0
 
     browser_kwargs = {
         "headless": True,
         "extra_args": sb.LAUNCH_ARGS,
         "light_mode": True,
+        "avoid_css": True,
+        "avoid_ads": True,
         "memory_saving_mode": True,
-        # El reciclado interno de crawl4ai 0.9.1 deja procesos Chrome huérfanos
-        # en Windows. El supervisor recicla el proceso completo por lotes.
+        # El supervisor recicla el proceso completo por lotes. La mayoría de los
+        # sitios ya no toca Chrome porque se resuelve en la capa HTTP.
         "max_pages_before_recycle": 0,
     }
     if sb.PROXY:
         browser_kwargs["proxy_config"] = ProxyConfig(server=sb.PROXY)
     bc = BrowserConfig(**browser_kwargs)
-    sem = asyncio.Semaphore(args.concurrency)
+    http_strategy = AsyncHTTPCrawlerStrategy(
+        browser_config=HTTPCrawlerConfig(verify_ssl=False, follow_redirects=True),
+        max_connections=max(args.http_concurrency, 4),
+    )
+    http_config = build_http_config()
+    browser_config = build_browser_config(slow=False)
+    slow_browser_config = build_browser_config(slow=True)
+    http_sem = asyncio.Semaphore(args.http_concurrency)
+    browser_sem = asyncio.Semaphore(args.concurrency)
     ok = fail = 0
-    async with AsyncWebCrawler(config=bc) as crawler:
+    async with AsyncWebCrawler(crawler_strategy=http_strategy) as http_crawler, \
+            AsyncWebCrawler(config=bc) as browser_crawler:
         async def worker(d):
             nonlocal ok, fail
-            async with sem:
+            total_started = time.time()
+            previous_attempts = resume[d][1]
+            async with http_sem:
                 try:
-                    home = await asyncio.wait_for(crawl_home(crawler, d, None), timeout=30)
-                except asyncio.TimeoutError:
-                    home = {"domain": d, "ok": False, "n_pages": 0, "pages": [],
-                            "combined_markdown": "", "clean_text": "",
-                            "reason": "home_timeout"}
-                if browser_is_unavailable(home):
-                    raise BrowserUnavailable(
-                        f"Chrome no disponible mientras se procesaba {d}: "
-                        f"{home.get('error', '')[:120]}"
+                    http_result = await asyncio.wait_for(
+                        crawl_site(http_crawler, d, http_config, args.max_pages),
+                        timeout=args.domain_timeout,
                     )
-                if args.max_pages <= 1 or _home_is_enough(home):
-                    res = home
-                    res["crawl_mode"] = "home_sufficient" if home.get("ok") else "home_only"
-                else:
+                except asyncio.TimeoutError:
+                    http_result = _finalize(d, [], total_started, fallback="http_timeout")
+                    http_result["error"] = "http_timeout"
+
+            if _home_is_enough(http_result):
+                res = http_result
+                res["crawl_mode"] = "http_sufficient"
+            elif args.http_only:
+                res = http_result
+                res["crawl_mode"] = "http_only"
+            else:
+                async with browser_sem:
                     try:
-                        deep = await asyncio.wait_for(
-                            crawl_one(crawler, d, args.depth, args.max_pages),
+                        browser_result = await asyncio.wait_for(
+                            crawl_site(
+                                browser_crawler, d, browser_config, args.max_pages,
+                                fallback="browser_after_http",
+                            ),
                             timeout=args.domain_timeout,
                         )
                     except asyncio.TimeoutError:
-                        deep = {"domain": d, "ok": False, "n_pages": 0,
-                                "secs": float(args.domain_timeout), "pages": [],
-                                "combined_markdown": "", "clean_text": "",
-                                "clean_meta": {"version": "2.1", "input_chars": 0,
-                                               "context_chars": 0,
-                                               "context_categories": []},
-                                "reason": "deep_timeout"}
-                    if browser_is_unavailable(deep):
+                        browser_result = _finalize(
+                            d, [], total_started, fallback="browser_fast_timeout"
+                        )
+                        browser_result["error"] = "browser_fast_timeout"
+                    if browser_is_unavailable(browser_result):
                         raise BrowserUnavailable(
                             f"Chrome no disponible mientras se procesaba {d}: "
-                            f"{deep.get('error', '')[:120]}"
+                            f"{browser_result.get('error', '')[:120]}"
                         )
-                    if deep.get("ok"):
-                        res = deep
-                        res["crawl_mode"] = "deep_for_missing_signals"
-                    elif home.get("ok"):
-                        res = home
-                        res["fallback"] = "home_after_deep_failure"
-                        res["crawl_mode"] = "home_fallback"
-                    else:
-                        res = deep
+
+                    slow_result = None
+                    if (not http_result.get("ok")
+                            and should_try_slow_browser(browser_result)):
+                        try:
+                            slow_result = await asyncio.wait_for(
+                                crawl_site(
+                                    browser_crawler, d, slow_browser_config,
+                                    args.max_pages, fallback="slow_browser_retry",
+                                ),
+                                timeout=args.domain_timeout,
+                            )
+                        except asyncio.TimeoutError:
+                            slow_result = _finalize(
+                                d, [], total_started, fallback="browser_slow_timeout"
+                            )
+                            slow_result["error"] = "browser_slow_timeout"
+                        if browser_is_unavailable(slow_result):
+                            raise BrowserUnavailable(
+                                f"Chrome no disponible mientras se procesaba {d}: "
+                                f"{slow_result.get('error', '')[:120]}"
+                            )
+
+                if browser_result.get("ok"):
+                    res = browser_result
+                    res["crawl_mode"] = "browser_for_js_or_missing_signals"
+                elif slow_result and slow_result.get("ok"):
+                    res = slow_result
+                    res["crawl_mode"] = "browser_slow_retry"
+                elif http_result.get("ok"):
+                    res = http_result
+                    res["fallback"] = "http_after_browser_failure"
+                    res["crawl_mode"] = "http_partial_fallback"
+                else:
+                    res = slow_result or browser_result
+                    res["crawl_mode"] = "failed_after_cascade"
+                    res["fallback_errors"] = {
+                        "http": http_result.get("error"),
+                        "browser": browser_result.get("error"),
+                    }
+
+            res["secs"] = round(time.time() - total_started, 1)
+            res["crawl_attempts"] = previous_attempts + 1
+            res["crawl_engine"] = f"crawl4ai-{crawl4ai_version}"
             output_path = os.path.join(args.out, f"{d}.json")
             temp_path = f"{output_path}.{os.getpid()}.tmp"
             with open(temp_path, "w", encoding="utf-8") as handle:

@@ -75,7 +75,8 @@ python3 make_batches.py --size 12 --outdir batches   # lotes CHICOS: ver aviso a
 del harness. Instrucción para cada subagente (auto-contenida):
 > Clasifica el modelo de negocio de empresas financieras mexicanas leyendo SOLO el clean_text.
 > (a) corre `python3 <skill>/fetch_ct.py --batch <batch_NN.txt>`;
-> (b) lee cada `ct_<dom>.txt`; (c) aplica el rubro de `PROMPT.md`;
+> (b) lee cada `ct_<dom>.txt` como UTF-8 explícito (en Windows PowerShell usa
+> `Get-Content -Encoding UTF8`; no uses el default ANSI); (c) aplica el rubro de `PROMPT.md`;
 > (d) escribe `<skill>/batches/cls_NN.jsonl`, una línea JSON por dominio con
 > `{domain,label,confidence,primary_customer,evidence,reason}` (evidence = cita textual).
 
@@ -83,6 +84,11 @@ del harness. Instrucción para cada subagente (auto-contenida):
 fuerte) con el MISMO rubro, sin mostrarles la capa 1, sobre un sample estratificado + TODOS
 los `confidence=low`/`mixed`/`unclear`. Escriben `verify_NN.jsonl` con
 `{domain,verify_label,confidence,evidence}`.
+
+Antes de persistir, `load_supabase.py` vuelve a leer `site_crawls.clean_text` y exige que
+cada evidencia no-`unclear` sea una cita literal. Si una capa normalizó acentos, espacios o
+puntuación, la carga se detiene y el dominio se vuelve a ejecutar; no se guarda evidencia
+aproximada.
 
 ```bash
 # 4) cargar todo (glob de los cls_/verify_ que escribieron los subagentes)

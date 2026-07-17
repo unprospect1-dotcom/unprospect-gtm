@@ -36,7 +36,9 @@ def build_worker_command(args, worker_index):
         "--max-pages", str(args.max_pages),
         "--depth", str(args.depth),
         "--concurrency", str(args.concurrency_per_worker),
+        "--http-concurrency", str(args.http_concurrency_per_worker),
         "--domain-timeout", str(args.domain_timeout),
+        "--max-attempts", str(args.max_attempts),
         "--shard-count", str(args.workers),
         "--shard-index", str(worker_index),
         "--cycle-size", str(args.cycle_size),
@@ -97,8 +99,12 @@ def supervise(args):
         raise ValueError("--workers debe ser >= 1")
     if args.concurrency_per_worker < 1:
         raise ValueError("--concurrency-per-worker debe ser >= 1")
+    if args.http_concurrency_per_worker < 1:
+        raise ValueError("--http-concurrency-per-worker debe ser >= 1")
     if args.cycle_size < 1:
         raise ValueError("--cycle-size debe ser >= 1")
+    if args.max_attempts < 1:
+        raise ValueError("--max-attempts debe ser >= 1")
 
     if args.supabase:
         import load_supabase as sink
@@ -111,8 +117,8 @@ def supervise(args):
     Path(args.out).resolve().mkdir(parents=True, exist_ok=True)
     states = [WorkerState(index=index) for index in range(args.workers)]
     print(
-        f"Supervisor: {args.workers} workers x {args.concurrency_per_worker} pestanas "
-        f"(total {args.workers * args.concurrency_per_worker}). Logs: {log_dir}",
+        f"Supervisor: {args.workers} workers x {args.concurrency_per_worker} pestañas Chrome "
+        f"+ {args.http_concurrency_per_worker} HTTP por worker. Logs: {log_dir}",
         flush=True,
     )
 
@@ -137,10 +143,10 @@ def supervise(args):
                     print(f"worker {state.index + 1} completo", flush=True)
                     continue
                 if exit_code == 80:
-                    state.next_start = time.time() + 2
+                    state.next_start = time.time() + 1
                     print(
                         f"worker {state.index + 1} completo su lote; "
-                        "Chrome nuevo en 2s",
+                        "Chrome nuevo en 1s",
                         flush=True,
                     )
                     continue
@@ -185,11 +191,14 @@ def parse_args(argv=None):
     parser.add_argument("--out", required=True)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--concurrency-per-worker", type=int, default=3)
+    parser.add_argument("--http-concurrency-per-worker", type=int, default=12)
     parser.add_argument("--max-pages", type=int, default=2)
     parser.add_argument("--depth", type=int, default=1)
     parser.add_argument("--domain-timeout", type=int, default=45)
-    parser.add_argument("--cycle-size", type=int, default=3,
-                        help="dominios por proceso Chrome antes de reciclar (def 3).")
+    parser.add_argument("--cycle-size", type=int, default=100,
+                        help="dominios por proceso antes de reciclar Chrome (def 100).")
+    parser.add_argument("--max-attempts", type=int, default=2,
+                        help="intentos totales por dominio fallido (def 2).")
     parser.add_argument("--max-restarts", type=int, default=20,
                         help="reinicios por worker; 0 significa ilimitados (def 20).")
     parser.add_argument("--log-dir")

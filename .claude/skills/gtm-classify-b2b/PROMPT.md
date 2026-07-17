@@ -55,6 +55,14 @@ personas (B2C)?
 7. Sector gobierno / público (Estados, Municipios, entidades) → `b2b`.
 8. Duda real b2b↔b2c con evidencia pareja de **productos reales** → `mixed`. Falta de
    contenido → `unclear`.
+9. **Peso real de ambos lados.** Usa `mixed` cuando el sitio desarrolla ofertas reales B2B
+   y B2C con peso sustancial. Si resume explícitamente audiencias empresariales y personales
+   y ambas tienen productos o secciones propias, no declares una de ellas "secundaria" solo
+   porque haya más nombres de producto del otro lado.
+10. **Una línea B2B aislada no vuelve mixto a un negocio B2C.** Si el hero, la navegación y
+    el viaje principal hablan al consumidor, conserva `b2c` aunque exista una sección menor
+    para desarrolladores o empresas. Esa línea puede registrarse aparte para segmentación,
+    pero no cambia por sí sola al cliente principal.
 
 ## Confianza
 

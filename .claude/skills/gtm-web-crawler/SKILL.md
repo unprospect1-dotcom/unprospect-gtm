@@ -1,6 +1,6 @@
 ---
 name: gtm-web-crawler
-description: Crawler de sitios web self-host y gratis ($0) para enrichment profundo. Dado un dominio, renderiza JS (rinde SPAs/Angular), navega solo las secciones de alto valor (nosotros, servicios, aviso de privacidad) y devuelve markdown limpio como raw data para enrichment y segmentación (a quién le venden, si es B2B, casos de estudio, sectores). Motor crawl4ai (render + deep-crawl priorizado + click nativo). Corre en batch con concurrencia y reanudación. Lo que no rinde (Cloudflare/JS raro) se marca para escalar a capa agéntica.
+description: Crawler de sitios web self-host y gratis ($0) para enrichment profundo. Usa la capa HTTP de Crawl4AI primero y abre Chromium sólo para SPAs/JS o señales faltantes. Navega únicamente secciones de alto valor y devuelve markdown recuperable más clean_text compacto para saber qué venden, a quién, si son B2B y qué prueba social tienen. Corre en batch con concurrencia, reintentos acotados y reanudación.
 argument-hint: <dominio | archivo.txt/csv> [--max-pages N] [--concurrency N] [--out dir]
 ---
 
@@ -37,19 +37,22 @@ python .claude/skills/gtm-web-crawler/crawl.py a55.com.mx factoring.mx
 python .claude/skills/gtm-web-crawler/crawl.py --input dominios.csv --out salida
 
 # tuning
-python .../crawl.py --input doms.txt --max-pages 6 --depth 1 --concurrency 4
+python .../crawl.py --input doms.txt --max-pages 2 --concurrency 4 --http-concurrency 12
 ```
 
-Flags: `--max-pages` (páginas por sitio, def 6), `--depth` (profundidad de crawl, def 1),
-`--concurrency` (dominios en paralelo, def 4), `--out` (dir de salida, def `crawl_out`),
+Flags: `--max-pages` (páginas por sitio, def 2), `--depth` (compatibilidad; la cascada rápida usa un salto),
+`--concurrency` (pestañas Chromium en paralelo, def 4), `--http-concurrency` (requests HTTP en paralelo, def 12),
+`--max-attempts` (intentos totales de un fallo, def 2), `--out` (dir de salida, def `crawl_out`),
 `--no-resume` (rehacer aunque exista), `--supabase` (persistir cada resultado a la tabla
 `site_crawls` durante la corrida), `--domain-timeout` (límite total del deep crawl; si
-vence intenta rescatar el home). **Por defecto reanuda**: si ya existe `<out>/<dominio>.json`, lo salta.
+vence conserva el mejor resultado parcial). **Por defecto reanuda**: salta los `ok:true`; un
+fallo viejo recibe un único intento de rescate y luego queda detenido en `crawl_attempts:2`.
 
 ## Persistencia a Supabase (recomendado para batch grande)
 ```bash
 # durante el crawl (upsert por dominio, sobrevive reciclado del contenedor):
-python .../crawl.py --input dominios.csv --out crawl_out --supabase --concurrency 5
+python .../crawl.py --input dominios.csv --out crawl_out --supabase \
+  --http-concurrency 12 --concurrency 3
 
 # o cargar despues un dir/artefacto ya crawleado:
 python .../load_supabase.py --in crawl_out
@@ -67,7 +70,7 @@ Para completar toda la base sin duplicar dominios:
 python .../supabase_pipeline.py export-missing --out work/missing_domains.txt
 python .../supabase_pipeline.py reclean --checkpoint work/reclean_v21.done
 python .../crawl.py --input work/missing_domains.txt --out work/crawl_missing_v21 \
-  --max-pages 2 --concurrency 4 --domain-timeout 45 --supabase
+  --max-pages 2 --concurrency 3 --http-concurrency 12 --domain-timeout 45 --supabase
 ```
 
 Los tres comandos son idempotentes/reanudables: `reclean` registra cada upsert confirmado
@@ -75,29 +78,31 @@ en el checkpoint y `crawl.py` salta cualquier JSON ya terminado. Usa exclusivame
 variables globales `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `SUPABASE_TOKEN`.
 
 Para una corrida larga en Windows, usa el supervisor. Divide los dominios sin solaparlos,
-mantiene dos procesos de navegador aislados y reinicia sólo el que se caiga. El ejemplo
-usa 2 workers x 3 pestañas (6 dominios simultáneos). Cada navegador procesa una sola ola
-de 3 dominios y se cierra antes de acumular más memoria:
+mantiene dos procesos aislados y reinicia sólo el que se caiga. El ejemplo usa 2 workers,
+12 requests HTTP por worker y hasta 3 pestañas por navegador. Cada proceso atiende 100
+dominios antes de reciclarse; como la mayoría sale por HTTP, Chrome procesa una fracción:
 
 ```powershell
 python .claude/skills/gtm-web-crawler/crawl_supervisor.py `
   --input work/missing_domains.txt --out work/crawl_missing_v21 `
-  --workers 2 --concurrency-per-worker 3 --max-pages 2 `
-  --cycle-size 3 --domain-timeout 45 --supabase
+  --workers 2 --http-concurrency-per-worker 12 --concurrency-per-worker 3 `
+  --max-pages 2 --cycle-size 100 --domain-timeout 45 --supabase
 ```
 
 Cada worker escribe logs separados bajo `<out>_supervisor_logs`. Si Chrome completo se
 cierra, `crawl.py` sale con código reiniciable antes de guardar un falso fracaso; el
 supervisor espera unos segundos, crea un Chrome nuevo y reanuda desde los JSON existentes.
-Chrome mantiene JavaScript activo, pero no renderiza imágenes ni fuentes remotas. El HTML
+Chrome mantiene JavaScript activo en los fallbacks, pero no renderiza imágenes, CSS ni fuentes remotas. El HTML
 conserva `src`, `alt` y enlaces, así que los logos y casos detectados siguen guardándose.
-Además, cada worker cierra Chrome de forma ordenada cada 3 dominios. Este ciclo evita el
-crecimiento de memoria observado con el reciclado interno de Crawl4AI 0.9.1 en Windows.
+Además, cada worker cierra Chrome de forma ordenada al terminar su ciclo. Esto evita el
+crecimiento de memoria sin pagar un arranque nuevo cada tres dominios. Crawl4AI está fijado
+en 0.9.2, que además corrige la fuga de tareas/páginas del dispatcher en streaming.
 
 ## Salida
 Un `<out>/<dominio>.json` por sitio:
 ```json
-{ "domain": "...", "ok": true, "n_pages": 4, "secs": 13.1,
+{ "domain": "...", "ok": true, "n_pages": 2, "secs": 3.1,
+  "crawl_engine":"crawl4ai-0.9.2", "crawl_mode":"http_sufficient", "crawl_attempts":1,
   "pages": [{
     "url":"...", "path":"/nosotros", "chars":1234,
     "markdown":"...fit...", "raw_markdown":"...raw...",
@@ -120,16 +125,15 @@ Un `<out>/<dominio>.json` por sitio:
   (Cloudflare) o sitio muerto → esos van a la **Capa B agéntica** (browser-use/Stagehand), no se inventan.
 
 ## Cómo navega las secciones (respuesta a "¿todo el sitio o solo el home?")
-Deep-crawl priorizado: parte del home, puntúa los links internos por keywords de alto
-valor (nosotros/servicios/productos/clientes/casos/industrias/contacto…) y visita primero esos, hasta
-`--max-pages`, sin salir del dominio. No hay que listar URLs a mano.
-
-Si el deep crawl agota `--domain-timeout`, hace un intento directo al home. Esto evita
-falsos negativos en sitios útiles cuyo grafo de links se cuelga. En Windows activa ahorro
-de memoria y recicla el navegador cada 40 páginas.
+Cascada priorizada: Crawl4AI pide el home por HTTP sin navegador. Si ya encuentra oferta,
+audiencia/B2B y contexto de identidad/industria/prueba, termina. Si faltan señales, puntúa
+los links internos (casos/clientes primero; luego servicios/productos, industrias y nosotros)
+y abre sólo los mejores hasta `--max-pages`. Si el HTML es una shell de SPA o sigue thin,
+repite esa misma ruta con Chromium. Nunca sale del dominio ni vuelve a cargar el home como
+parte de un deep crawl separado.
 
 ## Arquitectura de 2 capas (barato→caro, mismo patrón que Parallel→subagentes)
-- **Capa A (este skill, $0, masivo):** crawl4ai resuelve ~la mayoría, incluyendo SPAs.
+- **Capa A (este skill, $0, masivo):** Crawl4AI HTTP → Chromium selectivo resuelve la mayoría, incluyendo SPAs.
 - **Capa B (agéntica, LLM, solo el residuo):** para challenges/JS raro que la Capa A marca
   `ok:false`. Ahí un agente (browser-use/Stagehand) **autoidentifica y pica botones**. Pendiente de integrar.
 
@@ -141,7 +145,8 @@ Detalle completo en `BENCHMARK.md` y en `gtm-enrich-web/LEARNINGS.md`.
 
 ## Para escalar (batch grande, ej. las ~1,310 SOFOMes con dominio)
 ```bash
-python .../crawl.py --input sofoms_domains.csv --out crawl_sofoms --concurrency 4
+python .../crawl.py --input sofoms_domains.csv --out crawl_sofoms \
+  --http-concurrency 12 --concurrency 3 --max-pages 2
 ```
-Reanuda solo por archivo (idempotente): si la sesión se corta, re-corre el mismo comando.
-Concurrencia 4 ≈ 4 sitios en paralelo; subir con cuidado (memoria del navegador).
+Reanuda por resultado y por número de intentos. La concurrencia HTTP puede ser mayor porque
+no abre páginas; subir `--concurrency` de Chrome con cuidado porque sí consume memoria.

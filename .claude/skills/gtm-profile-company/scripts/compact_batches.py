@@ -37,7 +37,8 @@ def compact_text(text: str, limit: int = 4_000) -> str:
         selected.append(addition)
         used += len(addition) + 1
     tail = text[-348:].lstrip()
-    return f"{head}\n{'\n'.join(selected)}\n{tail}"[:limit]
+    middle = "\n".join(selected)
+    return f"{head}\n{middle}\n{tail}"[:limit]
 
 
 def main() -> None:

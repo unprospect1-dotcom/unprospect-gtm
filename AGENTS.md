@@ -44,9 +44,19 @@ Lee `ARCHITECTURE.md` antes de cambios amplios. Para compatibilidad entre agente
 ## Subagentes
 
 Cuando un skill canónico pida subagentes paralelos y el trabajo pueda dividirse en lotes independientes,
-Codex puede delegarlo. Cada worker debe escribir archivos únicos; ningún worker modifica `LEARNINGS.md`,
+delégalo con los **lanes definidos en el repo** — nunca con un subagente genérico sin modelo explícito:
+
+- **Codex:** lanes en `.codex/agents/*.toml` (`gtm_classifier`, `gtm_verifier`, `gtm_profile_a/b/c`),
+  `gpt-5.4-mini` esfuerzo `low`, sandbox read-only (el worker devuelve la salida; el orquestador la guarda).
+- **Claude Code:** agentes en `.claude/agents/*.md` (`gtm-classifier`, `gtm-verifier`, `gtm-profiler`)
+  con `model` barato fijado en el frontmatter. Un subagente sin `model` HEREDA el modelo de la sesión
+  (Opus/Fable ≈ 5-10x Haiku): esa herencia fue la causa del run carísimo de julio 2026.
+
+El orquestador materializa el contexto en disco ANTES de despachar (los workers no hacen red) y lanza
+oleadas paralelas. Cada worker escribe/devuelve archivos únicos; ningún worker modifica `LEARNINGS.md`,
 Supabase ni un mismo archivo compartido. El agente principal valida, fusiona y persiste los resultados.
 Si la superficie actual no ofrece subagentes, ejecuta el mismo contrato secuencialmente.
+Guía completa: `docs/SUBAGENTS.md`.
 
 ## Compatibilidad de plataforma
 

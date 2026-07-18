@@ -19,6 +19,7 @@ Esta decisión preserva Claude Code y evita que dos copias completas de cada ski
 | `sonnet` / verificador fuerte | Modelo o pasada independiente más capaz disponible; registra el modelo real |
 | “en este directorio” | El directorio canónico `.claude/skills/<skill>/` |
 | `.claude/skills/...` | Ruta compartida intencional; no cambiarla a `.agents/skills/...` |
+| Agentes `.claude/agents/*.md` (`gtm-classifier`, `gtm-verifier`, `gtm-profiler`) | Lanes `.codex/agents/*.toml` (`gtm_classifier`, `gtm_verifier`, `gtm_profile_a/b/c`) |
 
 Si una capacidad del harness no existe, conserva el contrato del workflow y ejecútalo secuencialmente;
 no inventes resultados ni llames una API externa como sustituto sin autorización.

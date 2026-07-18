@@ -17,7 +17,10 @@ negocio** de **fit outbound**; no inventar ticket.
 3. Primera pasada: compactar a 4K caracteres con `scripts/compact_batches.py` o
    `scripts/rebatch_compact.py` y usar lotes de 10. Nunca superar 10 empresas por worker.
 4. Ejecutar capa 1 con los subagentes más baratos del harness:
-   - Claude Code: Haiku.
+   - Claude Code: agente **`gtm-profiler`** (`.claude/agents/`, ya fija `model: haiku` +
+     tools Read/Write). NUNCA un subagente general sin `model`: hereda el modelo caro de
+     la sesión (Opus/Fable ≈ 5-10x Haiku) — ese fue el origen del run carísimo.
+     Despachar en oleadas paralelas (varios Agent en un mismo mensaje).
    - Codex: `gpt-5.4-mini`, esfuerzo `low`, mediante las lanes de `.codex/agents/`.
 5. No repetir toda la base. Enviar a segunda pasada ciega, usando el contexto de hasta 8K,
    solo si se cumple al menos una condición:
@@ -26,8 +29,13 @@ negocio** de **fit outbound**; no inventar ticket.
    - `sales_economics` u `outbound_fit` es `unclear`;
    - falla una regla de consistencia del validador;
    - pertenece a la muestra de control determinística del 5% de casos claros.
-6. Rotar el worker de revisión y no mostrarle la respuesta inicial. Validar cada salida con
-   `scripts/validate_profiles.py`; toda cita debe existir literalmente en el contexto UTF-8.
+6. La revisión ciega va en un worker distinto sin ver la respuesta inicial:
+   - Claude Code: agente **`gtm-verifier`** (`model: sonnet`); cada subagente arranca con
+     contexto limpio, así que la ceguera es estructural — solo no incluyas la capa 1 en el
+     prompt de despacho.
+   - Codex: rotar entre las lanes `gtm_profile_a/b/c`.
+   Validar cada salida con `scripts/validate_profiles.py`; toda cita debe existir
+   literalmente en el contexto UTF-8.
 7. Aceptar directamente la primera pasada clara que valide. En casos revisados, aceptar si
    coinciden los campos categóricos; enviar solo desacuerdos a árbitro ciego o revisión humana.
 8. Persistir el perfil aceptado y ambas corridas auditables solo después de validar y confirmar
@@ -66,8 +74,10 @@ no llaman proveedores ni escriben en bases de datos.
 
 ## Modo barato en una sesión nueva
 
-Usar `gpt-5.4-mini` con esfuerzo `low`. La sesión barata puede ser el orquestador completo;
-debe reportar solo por checkpoint, no por empresa. Prompt operativo:
+En Codex: `gpt-5.4-mini` con esfuerzo `low`. En Claude Code: sesión con `/model haiku` (o
+sonnet) como orquestador — el modelo grande no aporta nada a orquestar lotes. La sesión
+barata puede ser el orquestador completo; debe reportar solo por checkpoint, no por
+empresa. Prompt operativo:
 
 > Usa `$gtm-profile-company`. Reanuda `company_gtm_profiles`; procesa solo pending/stale,
 > valida citas, persiste válidos y deja ambiguous/low-confidence en needs_review. No navegues

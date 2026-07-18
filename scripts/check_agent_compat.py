@@ -10,6 +10,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CLAUDE_SKILLS = ROOT / ".claude" / "skills"
 CODEX_SKILLS = ROOT / ".agents" / "skills"
+CLAUDE_AGENTS = ROOT / ".claude" / "agents"
+CODEX_AGENTS = ROOT / ".codex" / "agents"
 COMPAT_DOC = "docs/CODEX-COMPATIBILITY.md"
 
 
@@ -67,6 +69,39 @@ def validate() -> list[str]:
             errors.append(f"{adapter_path.relative_to(ROOT)} no referencia {canonical_ref}")
         if COMPAT_DOC not in adapter_text:
             errors.append(f"{adapter_path.relative_to(ROOT)} no referencia {COMPAT_DOC}")
+
+    errors.extend(validate_agent_lanes())
+    return errors
+
+
+def validate_agent_lanes() -> list[str]:
+    """Lanes de subagentes: cada agente Claude declara model/tools; cada lado tiene lanes."""
+    errors: list[str] = []
+    claude_lanes = sorted(CLAUDE_AGENTS.glob("*.md")) if CLAUDE_AGENTS.is_dir() else []
+    codex_lanes = sorted(CODEX_AGENTS.glob("*.toml")) if CODEX_AGENTS.is_dir() else []
+
+    if not claude_lanes:
+        errors.append("Faltan lanes Claude en .claude/agents/ (los workers heredarían el modelo caro)")
+    if not codex_lanes:
+        errors.append("Faltan lanes Codex en .codex/agents/")
+
+    for path in claude_lanes:
+        meta = frontmatter(path)
+        rel = path.relative_to(ROOT)
+        if not meta.get("name"):
+            errors.append(f"{rel}: falta name en frontmatter")
+        if not meta.get("description"):
+            errors.append(f"{rel}: falta description en frontmatter")
+        if not meta.get("model"):
+            errors.append(f"{rel}: falta model en frontmatter (sin model el subagente hereda el modelo de la sesión)")
+        if not meta.get("tools"):
+            errors.append(f"{rel}: falta tools en frontmatter (heredaría todas las tools)")
+
+    for path in codex_lanes:
+        text = path.read_text(encoding="utf-8")
+        rel = path.relative_to(ROOT)
+        if "model" not in text:
+            errors.append(f"{rel}: falta model en el lane Codex")
 
     return errors
 

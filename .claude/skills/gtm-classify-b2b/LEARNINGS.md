@@ -72,6 +72,33 @@ Cada subagente: (1) corre un fetch que baja clean_text de `site_crawls` a `ct_<d
 Los verificadores van **ciegos** (no ven las etiquetas de la capa 1). Batch máximo de
 12–15 dominios por subagente.
 
+## Config de subagentes por harness — 2026-07-18 (el fix del "carísimo y lento")
+
+La corrida masiva salió cara y lenta en Claude Code por DOS errores de harness, no del
+diseño de dos capas:
+
+1. **Herencia de modelo.** En Claude Code, un subagente sin `model` explícito **hereda el
+   modelo de la sesión principal** (docs oficiales: `model` omitido = `inherit`). Si la
+   sesión corre en Opus/Fable ($5-10/Mtok input vs $1 de Haiku), cada worker cuesta 5-10x
+   lo presupuestado. Además el subagente `general-purpose` carga TODAS las tools (schemas
+   de MCP incluidos). Fix permanente: agentes de proyecto en `.claude/agents/`
+   (`gtm-classifier` haiku, `gtm-verifier` sonnet, `gtm-profiler` haiku) con `tools:
+   Read, Write` — el espejo de los lanes `.codex/agents/*.toml` que Codex ya tenía.
+2. **Turnos y red por worker.** El flujo viejo hacía que CADA worker corriera fetch_ct.py
+   (12 requests HTTP secuenciales) y leyera 12 archivos — puro overhead multiplicado por
+   ~64 lotes, y encima se despachaba de uno en uno. Fix: `make_context.py` baja todo el
+   clean_text UNA vez y escribe un solo `ctx_NN.txt` por lote; el worker queda en
+   Read → Write (2 tool calls), y las oleadas se despachan en paralelo (varios Agent en
+   un mismo mensaje; corren en background).
+
+Orden de magnitud correcto: capa 1 de ~760 dominios ≈ 64 lotes × ~35K tokens ≈ $3-5 en
+Haiku (API-equivalente). Si un run "se siente" 10x eso, casi seguro un worker está
+heredando el modelo grande — revisar el despacho antes que el prompt.
+
+Otro hallazgo del mismo repaso: **Claude Code no lee `AGENTS.md`** — sin un `CLAUDE.md`
+que lo importe (`@AGENTS.md`), las sesiones de Claude arrancaban sin ninguna regla del
+repo (gasto, memoria, subagentes). Ya existe `CLAUDE.md` en la raíz.
+
 ## Validación Codex GPT-5.4 Mini — 2026-07-16
 
 Prueba controlada con dos subagentes ciegos `gpt-5.4-mini`, esfuerzo `low`, sobre 8 casos

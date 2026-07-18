@@ -25,17 +25,18 @@ ambos). Así el skill es portable.
 ```
 site_crawls.clean_text
         │
-   make_batches.py  ── parte los dominios pendientes en batch_NN.txt
-        │
+   make_context.py  ── UNA descarga masiva; escribe re_NN.txt + ctx_NN.txt
+        │              (todo el clean_text del lote en UN archivo por lote)
    ┌────▼──────────────────────────────┐  CAPA 1 — clasificación (modelo más barato)
-   │ 1 subagente por batch_NN.txt      │  cada uno: fetch_ct.py -> lee ct_*.txt ->
-   │   (haiku / codex-mini / …)        │  clasifica con PROMPT.md -> escribe cls_NN.jsonl
+   │ 1 worker por lote                 │  cada uno: Read ctx_NN.txt -> clasifica con
+   │  Claude Code: agente gtm-classifier│  PROMPT.md -> Write rcls_NN.jsonl
+   │  Codex: lane gtm_classifier       │  (cero red, cero Bash por worker)
    └────┬──────────────────────────────┘
         │
    ┌────▼──────────────────────────────┐  CAPA 2 — verificación independiente CIEGA
-   │ subagentes (modelo distinto/más   │  re-etiquetan SOLO el clean_text, sin ver la capa 1;
-   │  fuerte) sobre sample + los low/  │  escriben verify_NN.jsonl {domain,verify_label,...}
-   │  mixed/unclear                    │
+   │ Claude Code: agente gtm-verifier  │  re-etiquetan SOLO el clean_text, sin ver la capa 1;
+   │ Codex: lane gtm_verifier          │  escriben rver_NN.jsonl {domain,verify_label,...}
+   │ sobre sample + low/mixed/unclear  │
    └────┬──────────────────────────────┘
         │
    load_supabase.py  ── upsert a b2b_classification, calcula verify_agree
@@ -62,8 +63,9 @@ Entorno: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_TOKEN` (DDL). So
 
 ```bash
 cd .claude/skills/gtm-classify-b2b
-# 1) preparar lotes (resumible: excluye los ya clasificados)
-python3 make_batches.py --size 12 --outdir batches   # lotes CHICOS: ver aviso abajo
+# 1) materializar lotes + contexto (UNA descarga; resumible: --pending excluye clasificados)
+python3 make_context.py --pending --size 12 --outdir batches
+# re-run de filas sesgadas (verified=false):  python3 make_context.py --unverified
 ```
 
 > **Tamaño de lote (crítico):** usa lotes de **≤12-15 dominios** por subagente. En la
@@ -71,19 +73,20 @@ python3 make_batches.py --size 12 --outdir batches   # lotes CHICOS: ver aviso a
 > con la verificación vs 95% con lotes de 10; conteo b2b crudo 60% → real ~46%). Lotes
 > chicos = más subagentes pero clasificación confiable.
 
-**2) CAPA 1 — despachar un subagente por `batches/batch_NN.txt`**, con el modelo más barato
-del harness. Instrucción para cada subagente (auto-contenida):
-> Clasifica el modelo de negocio de empresas financieras mexicanas leyendo SOLO el clean_text.
-> (a) corre `python3 <skill>/fetch_ct.py --batch <batch_NN.txt>`;
-> (b) lee cada `ct_<dom>.txt` como UTF-8 explícito (en Windows PowerShell usa
-> `Get-Content -Encoding UTF8`; no uses el default ANSI); (c) aplica el rubro de `PROMPT.md`;
-> (d) escribe `<skill>/batches/cls_NN.jsonl`, una línea JSON por dominio con
-> `{domain,label,confidence,primary_customer,evidence,reason}` (evidence = cita textual).
+**2) CAPA 1 — 1 worker barato por lote**, siguiendo `WORKER_CLASSIFY.md`:
+- **Claude Code:** despacha el agente **`gtm-classifier`** (`.claude/agents/`, ya fija
+  `model: haiku` + tools Read/Write). NUNCA un subagente general sin `model`: heredaría el
+  modelo caro de la sesión. Lanza **oleadas de ~10 en paralelo** (varios Agent en un mismo
+  mensaje; corren en background).
+- **Codex:** despacha el lane **`gtm_classifier`** (`.codex/agents/`, gpt-5.4-mini low).
+  El lane es read-only: el worker devuelve el JSONL y el orquestador lo guarda.
+- El worker solo hace: Read `ctx_NN.txt` → clasificar con `PROMPT.md` → `rcls_NN.jsonl`.
+  Nada de fetch por worker: el contexto ya está en disco.
 
-**3) CAPA 2 — verificación ciega:** despachar subagentes (modelo distinto, idealmente más
-fuerte) con el MISMO rubro, sin mostrarles la capa 1, sobre un sample estratificado + TODOS
-los `confidence=low`/`mixed`/`unclear`. Escriben `verify_NN.jsonl` con
-`{domain,verify_label,confidence,evidence}`.
+**3) CAPA 2 — verificación ciega**, siguiendo `WORKER_VERIFY.md`: agente **`gtm-verifier`**
+(Claude Code, `model: sonnet`) o lane **`gtm_verifier`** (Codex), con el MISMO rubro, sin
+mostrarles la capa 1, sobre un sample estratificado + TODOS los `confidence=low`/`mixed`/
+`unclear`. Escriben `rver_NN.jsonl` con `{domain,verify_label,confidence,evidence}`.
 
 Antes de persistir, `load_supabase.py` vuelve a leer `site_crawls.clean_text` y exige que
 cada evidencia no-`unclear` sea una cita literal. Si una capa normalizó acentos, espacios o
@@ -91,10 +94,17 @@ puntuación, la carga se detiene y el dominio se vuelve a ejecutar; no se guarda
 aproximada.
 
 ```bash
-# 4) cargar todo (glob de los cls_/verify_ que escribieron los subagentes)
-python3 load_supabase.py --classify "batches/cls_*.jsonl" \
-    --verify "batches/verify_*.jsonl" --model haiku
+# 4) cargar todo (glob de los rcls_/rver_ que escribieron los subagentes)
+python3 load_supabase.py --classify "batches/rcls_*.jsonl" \
+    --verify "batches/rver_*.jsonl" --model haiku
 ```
+
+> **Costo/velocidad (por qué este flujo):** un subagente sin `model` explícito hereda el
+> modelo de la sesión principal (Opus/Fable ≈ 5-10x Haiku) — ese fue el "carísimo". Y el
+> flujo viejo (fetch + 12 lecturas por worker, despacho secuencial) era el "lento". Con
+> agentes nombrados + contexto pre-materializado + oleadas paralelas, ~60 lotes de capa 1
+> cuestan del orden de un puñado de dólares en Haiku, no decenas en el modelo grande.
+> Ver `docs/SUBAGENTS.md` para la guía completa.
 
 ## Tabla `b2b_classification`
 

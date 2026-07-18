@@ -1,5 +1,25 @@
 # LEARNINGS — gtm-profile-company
 
+## El run "carísimo y lento" en Claude Code — 2026-07-18
+
+No fue el diseño del skill: fue el despacho. En Claude Code un subagente sin `model`
+explícito **hereda el modelo de la sesión principal** (Opus/Fable ≈ 5-10x el costo de
+Haiku por token), y el repo no tenía ningún agente definido en `.claude/agents/` — así que
+"capa 1 con Haiku" en la práctica corría en el modelo grande, con TODAS las tools (schemas
+MCP incluidos) y despacho secuencial. Fix permanente:
+
+- Agente **`gtm-profiler`** (`model: haiku`, tools Read/Write) para la capa 1 y
+  **`gtm-verifier`** (`model: sonnet`) para la revisión ciega — espejo de las lanes
+  `.codex/agents/` que Codex ya tenía. Nunca despachar workers masivos sin agente nombrado.
+- Oleadas paralelas: varios `Agent` en un mismo mensaje (corren en background), no uno por
+  uno.
+- El orquestador tampoco necesita el modelo grande: sesión `/model haiku`/`sonnet` para
+  corridas masivas (equivalente al modo `gpt-5.4-mini` de Codex).
+
+Señal de alarma para el futuro: si una capa 1 de cientos de dominios cuesta decenas de
+dólares (o quema los límites de la sesión), un worker está heredando el modelo grande.
+El orden correcto es centavos por lote de 10 en Haiku.
+
 ## Loop inicial con crawls reales — 2026-07-16
 
 Muestra: 24 `clean_text` del crawler activo, balanceados por presencia/ausencia de señal B2B

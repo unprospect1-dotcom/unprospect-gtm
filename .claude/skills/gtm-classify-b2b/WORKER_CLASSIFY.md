@@ -1,20 +1,25 @@
-# WORKER: clasificador B2B (lote chico) — para despachar como subagente
+# WORKER: clasificador B2B (lote chico) — contrato para despachar como subagente
 
-Reemplaza NN por el número de lote que te dieron. Clasificas el MODELO DE NEGOCIO
-(b2b/b2c/mixed/unclear) de empresas financieras mexicanas leyendo SOLO el clean_text.
-No navegues la web ni uses conocimiento de la marca.
+En Claude Code despacha con el agente **`gtm-classifier`** (`.claude/agents/`); en Codex con
+el lane **`gtm_classifier`** (`.codex/agents/`). Ambos ya fijan modelo barato y reglas
+duras; este archivo es el contrato de la TAREA (reemplaza NN por el número de lote).
 
 SK=<ruta absoluta a>/.claude/skills/gtm-classify-b2b
 
-1. Lee el rubro completo: SK/PROMPT.md. Aplícalo al pie de la letra. OJO regla 6
-   (objeto social ≠ producto) y NO abuses de "mixed" (solo si hay dos clientes con peso
-   REAL comparable, con productos descritos para ambos).
-2. Baja los textos:  python3 SK/fetch_ct.py --batch SK/batches/re_NN.txt --outdir SK/batches/tc_NN
-3. Léelos:  for f in SK/batches/tc_NN/ct_*.txt; do echo "=== $f ==="; cat "$f"; echo; done
-4. Clasifica CADA dominio de SK/batches/re_NN.txt con foco.
-5. Escribe SK/batches/rcls_NN.jsonl, UNA línea JSON por dominio:
-   {"domain","label","confidence","primary_customer","evidence","reason"}
-   evidence = cita textual corta del clean_text. ct vacío -> "unclear".
+Prompt de despacho (auto-contenido, por lote):
 
-NO pegues el JSON en tu mensaje. Reporta solo cuántos clasificaste y la distribución.
-Confirma que las líneas de rcls_NN.jsonl == el número de dominios del lote.
+> Clasificas el MODELO DE NEGOCIO (b2b/b2c/mixed/unclear) de empresas mexicanas leyendo
+> SOLO el clean_text. 1) Lee el rubro completo SK/PROMPT.md y aplícalo al pie de la letra
+> (OJO regla 6: objeto social ≠ producto; NO abuses de "mixed"). 2) Lee SK/batches/ctx_NN.txt:
+> un bloque `=== dominio ===` por empresa. 3) Clasifica CADA dominio. 4) Escribe
+> SK/batches/rcls_NN.jsonl, UNA línea JSON por dominio:
+> {"domain","label","confidence","primary_customer","evidence","reason"}
+> evidence = cita textual literal corta del clean_text. Bloque vacío -> "unclear".
+> Reporta solo el conteo y la distribución; el número de líneas debe == dominios del lote.
+
+Notas por harness:
+- **Claude Code:** el worker escribe el archivo él mismo (tiene Write). No necesita Bash ni
+  red: el contexto ya está materializado por `make_context.py`.
+- **Codex (lane read-only):** el worker devuelve el JSONL como salida final y el
+  ORQUESTADOR lo guarda en `batches/rcls_NN.jsonl` tal cual, sin editarlo.
+- No mostrar al worker ninguna etiqueta previa (capa 1 nueva = desde cero).

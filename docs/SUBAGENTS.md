@@ -62,7 +62,16 @@ Fable 5 $10/$50.
 
 ## Pendiente operativo (el trabajo que motivó todo esto)
 
-Los **762 dominios `verified=false`** de `b2b_classification` siguen esperando el re-run a
-lotes chicos. Receta actualizada en `.claude/skills/gtm-classify-b2b/NEXT_STEPS.md`:
-`make_context.py --unverified` → oleadas de `gtm-classifier` → carga → `gtm-verifier`
-sobre sample+dudosos → carga con `verify_agree` → adjudicar desacuerdos.
+Estado real en Supabase al 2026-07-18:
+
+- **`company_gtm_profiles`** (gtm-profile-company): 26,848 filas — **504 accepted**,
+  6,572 not_profileable, y **19,772 pending, de las cuales 19,409 tienen crawl útil**.
+  Ese es el backlog grande. La cola es durable: cualquier sesión nueva reanuda con
+  `profile_status=pending` sin re-derivar nada.
+- **`b2b_classification`** (gtm-classify-b2b, universo SOFOM): 962 filas — 200 verificadas,
+  **762 sin verificar** esperando el re-run a lotes chicos
+  (`make_context.py --unverified` → oleadas `gtm-classifier` → carga → `gtm-verifier`).
+- `site_crawls`: 26,848 dominios crawleados, 21,499 con clean_text útil.
+
+El estado de una corrida vive en Supabase (cola con status), NUNCA en el chat: así un chat
+nuevo del orquestador cuesta una query de onboarding, no una re-derivación completa.

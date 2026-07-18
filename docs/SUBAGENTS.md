@@ -90,12 +90,12 @@ empresa, y correr el export → `load_supabase.py` apenas termine cada corrida.
 Los 762 de `b2b_classification` son chicos con cualquier opción: ~30 min en Claude Code
 (oleadas `gtm-classifier`) o ~$3-5 y minutos por Batch API.
 
-**Regla de decisión:** volumen de miles → opción A (Batch API); lotes chicos, validaciones
-y adjudicación → opción B; si tiene que ser Codex → opción C. La opción A no viola el
-espíritu de "solo subagentes del harness": ese principio nació para no depender de
-clasificadores de terceros (Parallel etc.); aquí el modelo es el mismo Haiku/Sonnet y el
-script es tan portable como los demás del repo — lo que cambia es el canal y que el gasto
-es API en vez de plan, por eso pasa por el gate de aprobación de gasto.
+**Decisión tomada (2026-07-18): operamos con B y C** — todo dentro de los planes, sin
+gasto API. B para oleadas desde Claude Code (validada en vivo: lote de 12 en ~60s y ~29K
+tokens con `gtm-classifier`); C para corridas masivas desatendidas en Codex vía
+`spawn_agents_on_csv` con **1 fila = 1 lote** (`gtm-classify-b2b/codex_csv.py` genera el
+CSV + prompt y colecta los resultados; estado en SQLite = resumable). La opción A (Batch
+API, ~$50 y 1-3h para 19.4K) queda documentada como alternativa si algún día urge.
 
 ## Reglas duras
 

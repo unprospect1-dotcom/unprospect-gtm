@@ -77,9 +77,14 @@ python3 make_context.py --pending --size 12 --outdir batches
 - **Claude Code:** despacha el agente **`gtm-classifier`** (`.claude/agents/`, ya fija
   `model: haiku` + tools Read/Write). NUNCA un subagente general sin `model`: heredaría el
   modelo caro de la sesión. Lanza **oleadas de ~10 en paralelo** (varios Agent en un mismo
-  mensaje; corren en background).
-- **Codex:** despacha el lane **`gtm_classifier`** (`.codex/agents/`, gpt-5.4-mini low).
-  El lane es read-only: el worker devuelve el JSONL y el orquestador lo guarda.
+  mensaje; corren en background). Referencia medida: ~60s y ~29K tokens por lote de 12.
+- **Codex (pocos lotes):** despacha el lane **`gtm_classifier`** (`.codex/agents/`,
+  gpt-5.4-mini low). El lane es read-only: el worker devuelve el JSONL y el orquestador lo
+  guarda.
+- **Codex (corrida masiva):** usa `spawn_agents_on_csv` vía **`codex_csv.py`** — 1 fila =
+  1 LOTE, estado en SQLite (resumable), 6 workers concurrentes:
+  `python3 codex_csv.py make --layer classify` imprime el prompt exacto para pegar;
+  al terminar, `codex_csv.py collect` valida y escribe los `rcls_NN.jsonl`.
 - El worker solo hace: Read `ctx_NN.txt` → clasificar con `PROMPT.md` → `rcls_NN.jsonl`.
   Nada de fetch por worker: el contexto ya está en disco.
 

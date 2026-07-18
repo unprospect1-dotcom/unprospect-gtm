@@ -50,6 +50,53 @@ Fable 5 $10/$50.
   así, revisa el despacho ANTES de tocar el prompt.
 - La capa 2 (sonnet, solo sample + dudosos ≈ 40% del volumen) agrega ~$3-4.
 
+## Por qué Codex hizo solo ~2,000 en 14 horas (post-mortem con docs oficiales)
+
+Observado: ~2,000 dominios en ~840 min ≈ **143/hora** (lotes de 10 → ~4.2 min/lote). Las
+causas, confirmadas contra la documentación de Codex (developers.openai.com/codex/subagents):
+
+1. **`max_threads = 4`** en `.codex/config.toml`, cuando el tope duro de Codex es **6**
+   (no configurable más arriba; issue openai/codex#11965). Dejamos 1/3 de la capacidad
+   sin usar. Ya está en 6.
+2. **La oleada se bloquea con el worker más lento**: "Codex waits until all requested
+   results are available, then returns a consolidated response". Con 4 workers y uno lento
+   (fetch de red, retry), la oleada entera espera.
+3. **Cada worker hacía su propio fetch** (12 requests HTTP + 12 lecturas) — minutos de
+   overhead por lote, igual que en Claude Code antes del fix.
+4. **Nada se persistía**: los `rcls_*.jsonl` vivían en `batches/` (gitignoreado) del
+   contenedor efímero. El contenedor se recicló y las ~14 horas de trabajo se evaporaron —
+   Supabase solo tiene 504 perfiles aceptados / 200 clasificaciones verificadas.
+
+Sobre "Codex lanzaba chats nuevos cada vez": cada subagente aparece como su propio thread
+en la UI ("the app surfaces each subagent thread") — eso es normal y deseable (ceguera +
+contexto limpio). El problema no eran los chats nuevos; eran los 4 puntos de arriba.
+
+**La herramienta correcta en Codex para trabajo masivo es `spawn_agents_on_csv`**
+(experimental): lee un CSV, lanza un worker por fila, guarda estado en SQLite (resumable)
+y exporta resultados combinados a CSV con `status`/`last_error`/`result_json` por fila.
+Usarla con **una fila = un LOTE** (columna con la ruta del `ctx_NN.txt`), no una fila por
+empresa, y correr el export → `load_supabase.py` apenas termine cada corrida.
+
+## Las 3 formas de correr el backlog, con números (19,409 perfiles pendientes)
+
+| Opción | Throughput | Tiempo total | Costo | Riesgos |
+|---|---|---|---|---|
+| **A. Batch API de Anthropic** (script stdlib+requests; Haiku capa 1, Sonnet capa 2 sobre dudosos; 50% de descuento batch) | hasta 100K requests por batch, la mayoría termina <1h | **~1-3 horas** | **~$50 ± 10 dólares API** (capa 1 ~$25 + capa 2 ~$25) | Gasto API real; requiere aprobación |
+| **B. Claude Code, lanes nuevos** (oleadas de 10 `gtm-profiler` haiku en paralelo, contexto pre-materializado) | ~2,000-3,000 dominios/h | **~7-10 horas** en varias sesiones | Incluido en el plan | Límites de ventana del plan; requiere babysitting; persistir cada ~5 oleadas |
+| **C. Codex bien configurado** (`spawn_agents_on_csv`, 1 fila = 1 lote, max_threads 6) | ~1,000-1,300 dominios/h | **~15-20 horas** | Incluido en el plan Codex | Tope duro de 6 threads; mismo babysitting |
+
+(La corrida vieja de Codex iba a 143/h — cualquiera de las tres es 7-20x más rápida.)
+
+Los 762 de `b2b_classification` son chicos con cualquier opción: ~30 min en Claude Code
+(oleadas `gtm-classifier`) o ~$3-5 y minutos por Batch API.
+
+**Regla de decisión:** volumen de miles → opción A (Batch API); lotes chicos, validaciones
+y adjudicación → opción B; si tiene que ser Codex → opción C. La opción A no viola el
+espíritu de "solo subagentes del harness": ese principio nació para no depender de
+clasificadores de terceros (Parallel etc.); aquí el modelo es el mismo Haiku/Sonnet y el
+script es tan portable como los demás del repo — lo que cambia es el canal y que el gasto
+es API en vez de plan, por eso pasa por el gate de aprobación de gasto.
+
 ## Reglas duras
 
 - Ningún skill despacha workers masivos con el agente general del harness.

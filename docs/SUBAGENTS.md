@@ -90,6 +90,11 @@ empresa, y correr el export → `load_supabase.py` apenas termine cada corrida.
 Los 762 de `b2b_classification` son chicos con cualquier opción: ~30 min en Claude Code
 (oleadas `gtm-classifier`) o ~$3-5 y minutos por Batch API.
 
+**Schema mínimo v2 (2026-07-18):** el trabajo masivo responde SOLO 5 campos —
+business_model, outbound_fit, sells, primary_customer, confidence. Sin citas (los modelos
+baratos las transcriben imperfecto y bloqueaban cargas) ni campos de matiz. El gate del
+loader es validación de enums; el control de fondo, la doble pasada ciega.
+
 **Decisión tomada (2026-07-18): operamos con B y C** — todo dentro de los planes, sin
 gasto API. B para oleadas desde Claude Code (validada en vivo: lote de 12 en ~60s y ~29K
 tokens con `gtm-classifier`); C para corridas masivas desatendidas en Codex vía
@@ -122,3 +127,21 @@ Estado real en Supabase al 2026-07-18:
 
 El estado de una corrida vive en Supabase (cola con status), NUNCA en el chat: así un chat
 nuevo del orquestador cuesta una query de onboarding, no una re-derivación completa.
+
+### Runbook — corrida masiva de perfiles (schema mínimo, vía B)
+
+```bash
+cd .claude/skills/gtm-classify-b2b
+# tramo de la cola (ej. desde el dominio 2500, de 3000 en 3000):
+python3 make_context.py --profile-pending --size 12 --skip 2500 --limit 3000 --outdir batches_prof
+# despachar oleadas de 10 agentes gtm-classifier (prompt de WORKER_CLASSIFY.md, ctx/rcls
+# con el número de lote de 4 dígitos que imprimió make_context)
+# cargar cada ~5 oleadas:
+python3 load_profiles.py --classify "batches_prof/rcls_*.jsonl" --model haiku-b12
+# capa 2 (gtm-verifier, WORKER_VERIFY.md) SOLO sobre needs_review + 5% de control;
+# recargar con --verify para calcular consenso.
+```
+
+La cola es resumible por diseño: `--profile-pending` lee `profile_status=eq.pending`, y
+`load_profiles.py` marca accepted/needs_review — una sesión nueva retoma donde sea con
+`--skip`, o simplemente re-corriendo `--profile-pending` (lo cargado ya no está pending).

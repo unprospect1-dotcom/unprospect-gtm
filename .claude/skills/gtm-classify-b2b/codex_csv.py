@@ -18,14 +18,17 @@ import os, csv, json, argparse, glob, sys
 SK = os.path.dirname(os.path.abspath(__file__))
 PREFIX = {"classify": "rcls", "verify": "rver"}
 FIELDS = {
-    "classify": '{"domain","label","confidence","primary_customer","evidence","reason"}',
-    "verify": '{"domain","verify_label","confidence","evidence"}',
+    "classify": '{"domain","business_model","outbound_fit","sells","primary_customer","confidence"}',
+    "verify": '{"domain","verify_label","verify_fit","confidence"}',
 }
 ROLE = {
-    "classify": ("Clasificas el MODELO DE NEGOCIO (b2b/b2c/mixed/unclear) de empresas "
-                 "leyendo SOLO el clean_text."),
-    "verify": ("Eres un VERIFICADOR independiente y CIEGO: etiqueta (b2b/b2c/mixed/unclear) "
-               "desde cero, sin ver ni pedir respuestas previas de otro worker."),
+    "classify": ("Clasificas empresas leyendo SOLO el clean_text: business_model "
+                 "(b2b/b2c/mixed/noncommercial/unclear), outbound_fit (high/medium/low/"
+                 "unclear), sells (<=10 palabras) y primary_customer (<=12 palabras). "
+                 "Sin citas, sin justificacion, sin campos extra."),
+    "verify": ("Eres un VERIFICADOR independiente y CIEGO: etiqueta business_model y "
+               "outbound_fit desde cero, sin ver ni pedir respuestas previas de otro "
+               "worker. Sin citas, sin justificacion."),
 }
 
 OUTPUT_SCHEMA = {
@@ -67,8 +70,8 @@ def cmd_make(a):
         f"Lee el rubro completo {SK}/PROMPT.md y aplícalo al pie de la letra (regla 6: objeto "
         "social != producto; no abusar de mixed). Luego lee el archivo {ctx_path}: contiene "
         "{n_domains} empresas en bloques '=== dominio ==='. Etiqueta CADA dominio. No navegues "
-        "la web ni uses conocimiento de marca; evidence = cita textual LITERAL del clean_text; "
-        "bloque vacío -> unclear. Reporta con report_agent_job_result un JSON con: nn=\"{nn}\", "
+        "la web ni uses conocimiento de marca; bloque vacío -> unclear/null. "
+        "Reporta con report_agent_job_result un JSON con: nn=\"{nn}\", "
         f"count=el número de dominios etiquetados, y jsonl=las {{n_domains}} líneas JSON "
         f"(una por dominio, separadas por \\n) con el shape {FIELDS[a.layer]}."
     )

@@ -15,7 +15,8 @@ Reglas duras:
 - Lee los archivos con la tool Read (UTF-8 garantizado). No uses Bash.
 - El contexto del lote viene en UN archivo `ctx_NN.txt` con bloques `=== dominio ===`.
   Etiqueta CADA dominio del lote.
-- `evidence` = cita textual LITERAL del clean_text. Evidencia insuficiente → `unclear`/null.
+- Schema mínimo: SOLO los campos que pida el despacho — sin citas, sin justificación.
+  Evidencia insuficiente → `unclear`/null.
 - Escribe tu salida con Write en el archivo JSONL exacto que te indique el despacho. No
   pegues el JSON en tu mensaje final.
 - Mensaje final: solo cuántos verificaste y la distribución.

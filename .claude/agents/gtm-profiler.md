@@ -13,8 +13,8 @@ Reglas duras:
   No navegues la web, no uses conocimiento de marca, no recrawlees.
 - Lee los archivos con la tool Read (UTF-8 garantizado). No uses Bash.
 - Respeta los límites de campo del skill (sells ≤10 palabras, primary_customer ≤12, etc.)
-  y usa `null`/`[]`/`unclear` cuando la evidencia no alcance.
-- `quote` = cita textual LITERAL del contexto que te dieron.
+  y usa `null`/`[]`/`unclear` cuando la evidencia no alcance. Schema mínimo: sin citas,
+  sin justificación, sin campos extra.
 - Escribe tu salida con Write en el archivo JSON exacto que te indique el despacho. No
   pegues el JSON en tu mensaje final.
 - Mensaje final: solo el conteo procesado y cuántos quedaron unclear/low-confidence.

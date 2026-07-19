@@ -32,7 +32,8 @@ cd $SK
 
 # 1) materializar lotes + contexto de los 762 no verificados (UNA sola descarga):
 python3 make_context.py --unverified --size 12
-#    escribe batches/re_NN.txt + batches/ctx_NN.txt (clean_text del lote en UN archivo)
+#    escribe batches/re_NNNN.txt + batches/ctx_NNNN.txt (numeración de 4 dígitos;
+#    clean_text del lote en UN archivo). Schema mínimo v2: salida de 6 campos, SIN citas.
 
 # 2) CAPA 1: 1 worker por lote, sigue WORKER_CLASSIFY.md.
 #    Claude Code -> agente gtm-classifier (.claude/agents/, model: haiku YA fijado).

@@ -5,6 +5,13 @@ description: Perfila empresas desde site_crawls.clean_text para saber si son B2B
 
 # GTM company profile
 
+> **Schema mínimo v2 (2026-07-18, decisión de producto):** la corrida masiva sobre la cola
+> `company_gtm_profiles` usa el flujo y rubro de **gtm-classify-b2b** (5 campos:
+> business_model, outbound_fit, sells, primary_customer, confidence; SIN citas) con
+> `make_context.py --profile-pending` + `load_profiles.py`. El rubro completo de este
+> skill (icp_*, sales_economics, outbound_scope, evidence…) queda para perfiles profundos
+> de subconjuntos ya filtrados, no para la pasada masiva.
+
 Producir un perfil breve y demostrable desde `clean_text`. Separar siempre **modelo de
 negocio** de **fit outbound**; no inventar ticket.
 

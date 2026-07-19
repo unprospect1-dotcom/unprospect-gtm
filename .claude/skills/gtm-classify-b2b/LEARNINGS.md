@@ -1,5 +1,21 @@
 # LEARNINGS — gtm-classify-b2b
 
+## Schema mínimo v2 — 2026-07-18 (decisión de producto de Camilo)
+
+El output se redujo a lo que el trabajo necesita: `business_model`, `outbound_fit`,
+`sells`, `primary_customer`, `confidence`. Fuera: `evidence` (citas), `reason`, y todos
+los sub-matices (entity_type, b2b_line_present, outbound_scope, sales_economics, icp_*).
+
+Por qué salieron las citas: en el smoke test con Haiku, 10/24 citas fallaron la validación
+literal — el modelo cose fragmentos con "..." y normaliza espacios/puntuación al
+transcribir. Pedirle a un LLM transcripción byte-exacta es pedirle la tarea equivocada.
+El control de calidad real siempre fue la **doble pasada ciega** (95% de acuerdo en lotes
+chicos) + validación de enums en el loader; el clean_text queda en Supabase si algún día
+hay que auditar una fila. Bonus: el output por empresa pasó de ~120 a ~35 tokens.
+
+`confidence` se queda aunque nadie lo lea como reporte: es el interruptor que decide qué
+va a capa 2. Es infraestructura del pipeline, no un campo informativo.
+
 ## Validación inicial (sample de 40 dominios SOFOM, estratificado por tamaño de clean_text)
 
 Verdad-base: 40 dominios etiquetados a mano leyendo el clean_text completo (`golden`).

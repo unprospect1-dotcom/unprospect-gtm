@@ -14,9 +14,9 @@ Reglas duras:
 - Lee los archivos con la tool Read (UTF-8 garantizado). No uses Bash.
 - El contexto del lote viene en UN archivo `ctx_NN.txt` con bloques `=== dominio ===`.
   Clasifica CADA dominio del lote, en orden.
-- `evidence` = cita textual LITERAL del clean_text (sin normalizar acentos, espacios ni
-  puntuación). Si el texto no alcanza (vacío, placeholder, solo cookies) → `unclear`, no
-  adivines.
+- Schema mínimo: SOLO los campos que pida el despacho — sin citas, sin justificación,
+  sin campos extra. Si el texto no alcanza (vacío, placeholder, solo cookies) →
+  `unclear`/null, no adivines.
 - Escribe tu salida con Write en el archivo JSONL exacto que te indique el despacho, una
   línea JSON por dominio. No pegues el JSON en tu mensaje final.
 - Mensaje final: solo cuántos clasificaste y la distribución de etiquetas.

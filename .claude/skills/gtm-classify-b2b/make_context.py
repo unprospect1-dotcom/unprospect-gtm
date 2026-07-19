@@ -14,11 +14,12 @@ cero Bash, mínimo de turnos.
 Fuentes de dominios:
   python3 make_context.py --pending                # crawleados sin clasificar (default)
   python3 make_context.py --unverified             # b2b_classification.verified=false
-                                                   # (re-run de los lotes-40 sesgados)
+  python3 make_context.py --profile-pending        # company_gtm_profiles pending con crawl
   python3 make_context.py --domains-file lista.txt # lista explícita
 
 Opciones: --size 12 (NO subir de 15: ver LEARNINGS), --maxchars 8000 (NO bajar de 7000),
---outdir batches. Resumible: --pending excluye lo ya clasificado al re-correr.
+--outdir batches, --skip N / --limit N para trocear corridas grandes (el número de lote
+arranca en skip/size, así corridas por tramos no chocan). Resumible.
 """
 import os, sys, argparse, math, requests
 
@@ -58,9 +59,12 @@ def main():
     src = ap.add_mutually_exclusive_group()
     src.add_argument("--pending", action="store_true")
     src.add_argument("--unverified", action="store_true")
+    src.add_argument("--profile-pending", action="store_true")
     src.add_argument("--domains-file")
     ap.add_argument("--size", type=int, default=12)
     ap.add_argument("--maxchars", type=int, default=8000)
+    ap.add_argument("--skip", type=int, default=0, help="salta los primeros N dominios (tramos)")
+    ap.add_argument("--limit", type=int, default=0, help="máximo de dominios en esta corrida (0 = todos)")
     ap.add_argument("--outdir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "batches"))
     a = ap.parse_args()
     if a.size > 15:
@@ -76,30 +80,45 @@ def main():
     elif a.unverified:
         rows = get_all(f"{U}/rest/v1/b2b_classification", H, {"select": "domain,verified"})
         todo = sorted(x["domain"] for x in rows if not x["verified"])
+    elif a.profile_pending:
+        rows = get_all(f"{U}/rest/v1/company_gtm_profiles", H,
+                       {"select": "domain", "profile_status": "eq.pending",
+                        "source_crawl_ok": "eq.true", "source_clean_chars": "gt.500"})
+        todo = sorted(x["domain"] for x in rows)
     else:
         crawled = {x["domain"] for x in get_all(f"{U}/rest/v1/site_crawls", H,
                    {"select": "domain", "ok": "eq.true", "clean_text": "not.is.null"})}
         done = {x["domain"] for x in get_all(f"{U}/rest/v1/b2b_classification", H, {"select": "domain"})}
         todo = sorted(crawled - done)
 
+    total = len(todo)
+    lot0 = a.skip // a.size
+    todo = todo[a.skip:a.skip + a.limit if a.limit else None]
+
     texts = fetch_texts(U, H, todo, a.maxchars)
     os.makedirs(a.outdir, exist_ok=True)
+    if a.skip == 0:  # corrida desde cero: limpia lotes viejos para no mezclar numeraciones
+        for f in os.listdir(a.outdir):
+            if (f.startswith(("re_", "ctx_")) and f.endswith(".txt")):
+                os.remove(os.path.join(a.outdir, f))
     n = math.ceil(len(todo) / a.size) if todo else 0
     empty = 0
     for i in range(n):
+        nn = lot0 + i
         chunk = todo[i * a.size:(i + 1) * a.size]
-        open(f"{a.outdir}/re_{i:02d}.txt", "w", encoding="utf-8").write("\n".join(chunk) + "\n")
+        open(f"{a.outdir}/re_{nn:04d}.txt", "w", encoding="utf-8").write("\n".join(chunk) + "\n")
         blocks = []
         for dom in chunk:
             ct = texts.get(dom, "")
             if not ct:
                 empty += 1
             blocks.append(f"=== {dom} ===\n{ct}\n")
-        open(f"{a.outdir}/ctx_{i:02d}.txt", "w", encoding="utf-8").write("\n".join(blocks))
+        open(f"{a.outdir}/ctx_{nn:04d}.txt", "w", encoding="utf-8").write("\n".join(blocks))
 
-    print(f"dominios: {len(todo)} | lotes de {a.size}: {n} | sin clean_text (van a unclear): {empty}")
+    print(f"universo: {total} | este tramo: {len(todo)} (skip {a.skip}) | lotes de {a.size}: {n} "
+          f"| sin clean_text (van a unclear): {empty}")
     if n:
-        print(f"-> {a.outdir}/re_00.txt + ctx_00.txt .. re_{n-1:02d}.txt + ctx_{n-1:02d}.txt")
+        print(f"-> {a.outdir}/re_{lot0:04d}.txt + ctx_{lot0:04d}.txt .. re_{lot0+n-1:04d}.txt + ctx_{lot0+n-1:04d}.txt")
         print("Despacha 1 worker barato por lote (Claude Code: agente gtm-classifier; "
               "Codex: lane gtm_classifier), en oleadas paralelas de ~10.")
 

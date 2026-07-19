@@ -5,11 +5,14 @@ description: Clasifica el modelo de negocio (B2B / B2C / mixto) de empresas a pa
 
 # gtm-classify-b2b
 
-Responde una sola pregunta por empresa, leyendo **solo el `clean_text`** de su sitio:
-**¿a quién le vende principalmente — empresas (B2B) o consumidores (B2C)?**
+Responde lo mínimo necesario por empresa, leyendo **solo el `clean_text`** de su sitio
+(**schema mínimo v2, 2026-07-18**): ¿es B2B?, ¿es fit para outbound?, ¿qué vende? y ¿a
+quién? Sin citas ni justificación — el control de calidad es la doble pasada ciega.
 
-Salida: `b2b` · `b2c` · `mixed` · `unclear`, con `confidence`, `primary_customer`,
-`evidence` (cita textual) y `reason`. Persistido en Supabase `b2b_classification`.
+Salida (6 campos): `business_model` (b2b·b2c·mixed·noncommercial·unclear) ·
+`outbound_fit` (high·medium·low·unclear) · `sells` (≤10 palabras) · `primary_customer`
+(≤12 palabras) · `confidence`. Persistido en `b2b_classification` (load_supabase.py) o en
+la cola `company_gtm_profiles` (load_profiles.py, corrida masiva de perfiles).
 
 Paso natural **después de `gtm-web-crawler`** (que llena `site_crawls.clean_text`) y
 **antes de `gtm-pain-segments`** (segmentar por a-quién-le-vende necesita saber si es B2B).
@@ -93,10 +96,11 @@ python3 make_context.py --pending --size 12 --outdir batches
 mostrarles la capa 1, sobre un sample estratificado + TODOS los `confidence=low`/`mixed`/
 `unclear`. Escriben `rver_NN.jsonl` con `{domain,verify_label,confidence,evidence}`.
 
-Antes de persistir, `load_supabase.py` vuelve a leer `site_crawls.clean_text` y exige que
-cada evidencia no-`unclear` sea una cita literal. Si una capa normalizó acentos, espacios o
-puntuación, la carga se detiene y el dominio se vuelve a ejecutar; no se guarda evidencia
-aproximada.
+Antes de persistir, los loaders validan enums y forma (valores permitidos de
+business_model/outbound_fit/confidence, límites de palabras); una fila inválida detiene la
+carga y el lote se re-despacha. Ya NO se piden citas: en la práctica los modelos baratos
+las transcriben imperfecto (cosen fragmentos, normalizan espacios) y bloqueaban cargas sin
+aportar control real — la garantía de calidad es el acuerdo entre dos pasadas ciegas.
 
 ```bash
 # 4) cargar todo (glob de los rcls_/rver_ que escribieron los subagentes)
@@ -113,9 +117,11 @@ python3 load_supabase.py --classify "batches/rcls_*.jsonl" \
 
 ## Tabla `b2b_classification`
 
-Una fila por dominio (migración `supabase/migrations/004_b2b_classification.sql`):
-`domain, label, confidence, primary_customer, evidence, reason, model, verified,
-verify_label, verify_agree, verify_note, classified_at`.
+Una fila por dominio (migraciones `004_b2b_classification.sql` + `009_b2b_minimal_schema.sql`):
+`domain, label, confidence, primary_customer, sells, outbound_fit, model, verified,
+verify_label, verify_fit, verify_agree, classified_at` (evidence/reason quedan null desde v2).
+Para la corrida masiva de perfiles, `load_profiles.py` persiste los mismos campos en
+`company_gtm_profiles` (cola durable con `profile_status`).
 
 Join: `b2b_classification.domain = site_crawls.domain = sofoms.domain`.
 

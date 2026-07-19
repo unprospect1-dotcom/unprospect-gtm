@@ -1,26 +1,28 @@
 """Carga clasificaciones a Supabase `b2b_classification` (upsert por dominio).
 
-Fusiona la salida del clasificador (capa 1) con la del verificador (capa 2, opcional) y
-calcula verify_agree. La tabla se crea sola si no existe (DDL idempotente).
+Schema mínimo v2 (2026-07-18): sin citas ni reason. El gate de calidad pre-carga es la
+validación de enums/forma; el control de fondo es la doble pasada ciega (verify_agree).
 
-  python load_supabase.py --classify "batches/cls_*.jsonl"
-  python load_supabase.py --classify batches --verify "batches/verify_*.jsonl" --model haiku
+  python load_supabase.py --classify "batches/rcls_*.jsonl"
+  python load_supabase.py --classify batches --verify "batches/rver_*.jsonl" --model haiku
 
 Formatos (una línea JSON por dominio):
-  classify: {domain,label,confidence,primary_customer,evidence,reason}
-  verify:   {domain,verify_label,confidence,evidence}
+  classify: {domain,business_model,outbound_fit,sells,primary_customer,confidence}
+  verify:   {domain,verify_label,verify_fit,confidence}
 """
 import os, sys, json, re, argparse, time, glob, requests
-from validate_evidence import find_evidence_failures
 
 U = os.environ["SUPABASE_URL"].rstrip("/"); K = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 TOK = os.environ.get("SUPABASE_TOKEN", "")
 REF = re.search(r"https://([a-z0-9]+)\.supabase", U).group(1)
 
-DDL = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..",
-           "supabase", "migrations", "004_b2b_classification.sql"), encoding="utf-8").read() \
-      if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-           "..","..","..","supabase","migrations","004_b2b_classification.sql")) else None
+SK = os.path.dirname(os.path.abspath(__file__))
+MIGRATIONS = os.path.join(SK, "..", "..", "..", "supabase", "migrations")
+DDL_FILES = ("004_b2b_classification.sql", "009_b2b_minimal_schema.sql")
+
+LABELS = {"b2b", "b2c", "mixed", "noncommercial", "unclear"}
+FITS = {"high", "medium", "low", "unclear"}
+CONF = {"high", "medium", "med", "low"}
 
 def mgmt_sql(sql):
     r = requests.post(f"https://api.supabase.com/v1/projects/{REF}/database/query",
@@ -28,7 +30,7 @@ def mgmt_sql(sql):
     return r.status_code, r.text[:200]
 
 def read_jsonl(pattern):
-    """Acepta un archivo, un glob (cls_*.jsonl) o un directorio. Fusiona todo."""
+    """Acepta un archivo, un glob (rcls_*.jsonl) o un directorio. Fusiona todo."""
     out = {}
     if not pattern: return out
     paths = []
@@ -46,6 +48,33 @@ def read_jsonl(pattern):
             except Exception: pass
     return out
 
+def norm_conf(v):
+    v = str(v or "").strip().lower()
+    return "medium" if v == "med" else v
+
+def validate_rows(C, V):
+    """Enums y forma. Reemplaza al gate de citas: filas inválidas detienen la carga."""
+    bad = []
+    for dom, c in C.items():
+        if not re.fullmatch(r"[A-Za-z0-9.-]+", dom or ""):
+            bad.append(f"{dom}:domain"); continue
+        if str(c.get("business_model", c.get("label", ""))).strip().lower() not in LABELS:
+            bad.append(f"{dom}:business_model")
+        if str(c.get("outbound_fit", "")).strip().lower() not in FITS:
+            bad.append(f"{dom}:outbound_fit")
+        if str(c.get("confidence", "")).strip().lower() not in CONF:
+            bad.append(f"{dom}:confidence")
+        if len(str(c.get("sells") or "").split()) > 14:
+            bad.append(f"{dom}:sells>14w")
+        if len(str(c.get("primary_customer") or "").split()) > 16:
+            bad.append(f"{dom}:primary_customer>16w")
+    for dom, v in V.items():
+        if str(v.get("verify_label", "")).strip().lower() not in LABELS:
+            bad.append(f"{dom}:verify_label")
+        if v.get("verify_fit") is not None and str(v["verify_fit"]).strip().lower() not in FITS:
+            bad.append(f"{dom}:verify_fit")
+    return bad
+
 def upsert(rows):
     hdr = {"apikey": K, "Authorization": f"Bearer {K}", "Content-Type": "application/json",
            "Prefer": "resolution=merge-duplicates,return=minimal"}
@@ -58,67 +87,46 @@ def upsert(rows):
             time.sleep(2 ** attempt)
     return len(rows)
 
-def fetch_clean_texts(domains):
-    """Fetch source text in chunks so model evidence can be checked before persistence."""
-    hdr = {"apikey": K, "Authorization": f"Bearer {K}"}
-    out = {}
-    domains = sorted(set(domains))
-    invalid = [domain for domain in domains if not re.fullmatch(r"[A-Za-z0-9.-]+", domain or "")]
-    if invalid:
-        raise RuntimeError(f"invalid domain value(s): {', '.join(invalid[:20])}")
-    for i in range(0, len(domains), 100):
-        chunk = domains[i:i+100]
-        r = requests.get(
-            f"{U}/rest/v1/site_crawls",
-            params={"select": "domain,clean_text", "domain": f"in.({','.join(chunk)})"},
-            headers=hdr,
-            timeout=120,
-        )
-        if r.status_code >= 400:
-            raise RuntimeError(f"clean_text fetch {r.status_code}: {r.text[:200]}")
-        payload = r.json()
-        if not isinstance(payload, list):
-            raise RuntimeError("clean_text fetch returned a non-list payload")
-        for row in payload:
-            out[row.get("domain")] = row.get("clean_text")
-    return out
-
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--classify", required=True, help="archivo, glob (cls_*.jsonl) o directorio")
+    ap.add_argument("--classify", required=True, help="archivo, glob (rcls_*.jsonl) o directorio")
     ap.add_argument("--verify", help="archivo, glob o directorio (opcional)")
     ap.add_argument("--model", default="haiku", help="modelo/subagente que clasificó, p.ej. haiku, codex-mini")
     args = ap.parse_args()
 
-    if TOK and DDL:
-        print("DDL:", mgmt_sql(DDL))
+    if TOK:
+        for name in DDL_FILES:
+            path = os.path.join(MIGRATIONS, name)
+            if os.path.exists(path):
+                print(f"DDL {name}:", mgmt_sql(open(path, encoding="utf-8").read()))
 
     C = read_jsonl(args.classify)
     V = read_jsonl(args.verify) if args.verify else {}
-    clean_texts = fetch_clean_texts(C)
-    evidence_failures = find_evidence_failures(C, V, clean_texts)
-    if evidence_failures:
-        preview = ", ".join(evidence_failures[:20])
-        suffix = " ..." if len(evidence_failures) > 20 else ""
-        raise RuntimeError(
-            f"evidence validation failed for {len(evidence_failures)} row(s): {preview}{suffix}"
-        )
+    bad = validate_rows(C, V)
+    if bad:
+        preview = ", ".join(bad[:20]); suffix = " ..." if len(bad) > 20 else ""
+        raise RuntimeError(f"schema validation failed for {len(bad)} field(s): {preview}{suffix}")
+
     rows = []
     for dom, c in C.items():
         v = V.get(dom)
+        label = str(c.get("business_model", c.get("label", ""))).strip().lower()
         vlabel = str(v["verify_label"]).strip().lower() if v else None
         rows.append({
             "domain": dom,
-            "label": str(c.get("label", "")).strip().lower(),
-            "confidence": c.get("confidence"),
+            "label": label,
+            "confidence": norm_conf(c.get("confidence")),
             "primary_customer": c.get("primary_customer"),
-            "evidence": c.get("evidence"),
-            "reason": c.get("reason"),
+            "sells": c.get("sells"),
+            "outbound_fit": str(c.get("outbound_fit", "")).strip().lower() or None,
+            "evidence": None,
+            "reason": None,
             "model": args.model,
             "verified": bool(v),
             "verify_label": vlabel,
-            "verify_agree": (vlabel == str(c.get("label", "")).strip().lower()) if v else None,
-            "verify_note": (v.get("evidence") if v else None),
+            "verify_fit": (str(v["verify_fit"]).strip().lower() if v and v.get("verify_fit") else None),
+            "verify_agree": (vlabel == label) if v else None,
+            "verify_note": None,
         })
     n = upsert(rows)
     agree = sum(1 for r in rows if r["verify_agree"])

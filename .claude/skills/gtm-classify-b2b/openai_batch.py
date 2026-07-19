@@ -198,6 +198,19 @@ def cmd_drain(a):
     sys_tok = len(system) // 4 + 200
     round_n = 0
     while True:
+        # re-entrante: si hay un batch nuestro en vuelo (p.ej. el proceso anterior murió),
+        # adóptalo primero — evita duplicar lotes y chocar con el límite de encolados
+        active = [b for b in requests.get(f"{API}/batches?limit=10", headers=H, timeout=60)
+                  .json().get("data", []) if b["status"] in ("validating", "in_progress", "finalizing")]
+        for st in active:
+            print(f"adoptando batch en vuelo {st['id']} ({st['status']})", flush=True)
+            while st["status"] not in ("completed", "failed", "cancelled", "expired"):
+                time.sleep(60)
+                st = requests.get(f"{API}/batches/{st['id']}", headers=H, timeout=60).json()
+            if st["status"] == "completed":
+                ok, bad = collect_one(H, st, a.outdir)
+                print(f"adoptado: collected ok {ok} | bad {bad}", flush=True)
+
         lots = pending_lots(a.outdir)
         if not lots:
             print("DRAIN DONE: no quedan lotes pendientes", flush=True)

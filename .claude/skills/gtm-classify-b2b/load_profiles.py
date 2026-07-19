@@ -12,9 +12,22 @@ Regla de aceptación (espejo del skill gtm-profile-company):
   - con verify:  accepted si verify_label == business_model (decision_method=consensus);
                  si difieren -> needs_review (decision_method=disagreement).
 """
-import argparse, time, requests
+import argparse, glob, os, time, requests
 from datetime import datetime, timezone
 from load_supabase import U, K, read_jsonl, validate_rows, norm_conf
+
+
+def known_domains(classify_pattern):
+    """Dominios legítimos = los de los re_*.txt junto a los rcls. Un worker puede
+    escribir un dominio con typo; esas filas se descartan (el dominio real sigue
+    pending en la cola y se auto-repara en un tramo posterior)."""
+    dirs = {os.path.dirname(p) for p in glob.glob(classify_pattern)} or \
+           ({classify_pattern} if os.path.isdir(classify_pattern) else set())
+    doms = set()
+    for d in dirs:
+        for re_path in glob.glob(os.path.join(d, "re_*.txt")):
+            doms |= {l.strip() for l in open(re_path, encoding="utf-8") if l.strip()}
+    return doms
 
 IS_B2B = {"b2b": True, "mixed": True, "b2c": False, "noncommercial": False, "unclear": None}
 
@@ -42,6 +55,13 @@ def main():
 
     C = read_jsonl(args.classify)
     V = read_jsonl(args.verify) if args.verify else {}
+    valid = known_domains(args.classify)
+    if valid:
+        typos = sorted(set(C) - valid)
+        if typos:
+            print(f"descartados {len(typos)} dominios no presentes en los lotes (typo del worker): "
+                  + ", ".join(typos[:10]))
+            C = {d: c for d, c in C.items() if d in valid}
     bad = validate_rows(C, V)
     if bad:
         preview = ", ".join(bad[:20]); suffix = " ..." if len(bad) > 20 else ""

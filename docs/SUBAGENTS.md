@@ -102,6 +102,27 @@ tokens con `gtm-classifier`); C para corridas masivas desatendidas en Codex vía
 CSV + prompt y colecta los resultados; estado en SQLite = resumable). La opción A (Batch
 API, ~$50 y 1-3h para 19.4K) queda documentada como alternativa si algún día urge.
 
+## Patrón API directa (Batch) para masivos — "así le hacemos para todos"
+
+Para corridas de miles, el canal es la Batch API (OpenAI hoy; el runner es
+`gtm-classify-b2b/openai_batch.py`, modelo vía env `OPENAI_BATCH_MODEL`). Reglas fijas:
+
+1. **Estructura cacheable: lo estático ARRIBA, lo variable ABAJO.** El prompt caching de
+   OpenAI es automático por prefijo (≥1024 tokens): system = rubro completo, byte-idéntico
+   en todos los requests; user = SOLO el contexto del lote. Nunca metas fecha, run_id ni
+   nada variable en el system. (Así está armado openai_batch.py.)
+   Honestidad sobre el ahorro: en clasificación masiva el texto por dominio domina (~93%
+   del input y es único), así que el cache ahorra poco AQUÍ; donde ahorra en serio es en
+   flujos de prefijo gordo repetido (adjudicación sobre un mismo contexto, copy sobre un
+   brief fijo). La estructura se respeta igual en todos para que el ahorro llegue solo.
+2. **Modelo: el más barato que PASE el golden, no el más barato a secas.** Antes de
+   cambiar de modelo, correr el golden (los verificados de Supabase) por el candidato y
+   exigir ≥90% de acuerdo en casos claros. Validar cuesta centavos; una corrida sesgada
+   de 19K cuesta días.
+3. **custom_id = número de lote; salida = mismos rcls_NNNN.jsonl** que consumen los
+   loaders; lo no colectado queda pending y se auto-repara.
+4. **Cargar a Supabase apenas colectes.** Nada vive solo en disco.
+
 ## Reglas duras
 
 - Ningún skill despacha workers masivos con el agente general del harness.

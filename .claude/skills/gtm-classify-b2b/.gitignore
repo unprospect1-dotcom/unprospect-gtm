@@ -7,3 +7,8 @@ cls_*.jsonl
 verify_*.jsonl
 _*.json
 rerun/
+batches*/
+rcls_*.jsonl
+rver_*.jsonl
+re_*.txt
+ctx_*.txt

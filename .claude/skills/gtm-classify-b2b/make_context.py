@@ -23,7 +23,7 @@ arranca en skip/size, así corridas por tramos no chocan). Resumible.
 """
 import os, sys, argparse, math, requests
 
-CHUNK = 40  # dominios por request al pedir clean_text con in.() (URL acotada)
+CHUNK = 100  # dominios por request al pedir clean_text con in.() (URL acotada)
 
 
 def get_all(url, headers, params):

@@ -64,8 +64,15 @@ def main():
             C = {d: c for d, c in C.items() if d in valid}
     bad = validate_rows(C, V)
     if bad:
-        preview = ", ".join(bad[:20]); suffix = " ..." if len(bad) > 20 else ""
-        raise RuntimeError(f"schema validation failed for {len(bad)} field(s): {preview}{suffix}")
+        # filas inválidas NO bloquean el resto: se descartan y sus dominios siguen
+        # pending en la cola (auto-reparable en el barrido final)
+        bad_doms = {s.split(":")[0] for s in bad}
+        preview = ", ".join(sorted(bad_doms)[:10])
+        print(f"descartadas {len(bad_doms)} filas inválidas (quedan pending): {preview}")
+        C = {d: c for d, c in C.items() if d not in bad_doms}
+        V = {d: v for d, v in V.items() if d not in bad_doms}
+    if not C:
+        raise RuntimeError("no quedan filas válidas que cargar")
 
     rows = []
     for dom, c in C.items():

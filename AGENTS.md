@@ -43,7 +43,14 @@ Lee `ARCHITECTURE.md` antes de cambios amplios. Para compatibilidad entre agente
 
 ## Subagentes
 
-Cuando un skill canónico pida subagentes paralelos y el trabajo pueda dividirse en lotes independientes,
+**POLÍTICA MASIVOS (2026-07-19):** el trabajo masivo (miles de dominios: clasificación,
+perfilado, verificación) va por **API directa con Batch** (`gtm-classify-b2b/openai_batch.py`),
+NO por subagentes del harness — los planes topan límites de sesión a mitad de corrida.
+Los subagentes del harness quedan para calibración: golden evals, muestras y adjudicación.
+Guía y números: `docs/SUBAGENTS.md`.
+
+Cuando un skill canónico pida subagentes paralelos (dentro del alcance de calibración) y el
+trabajo pueda dividirse en lotes independientes,
 delégalo con los **lanes definidos en el repo** — nunca con un subagente genérico sin modelo explícito:
 
 - **Codex:** lanes en `.codex/agents/*.toml` (`gtm_classifier`, `gtm_verifier`, `gtm_profile_a/b/c`),

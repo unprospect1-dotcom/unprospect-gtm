@@ -104,6 +104,12 @@ API, ~$50 y 1-3h para 19.4K) queda documentada como alternativa si algún día u
 
 ## Patrón API directa (Batch) para masivos — "así le hacemos para todos"
 
+**Política (2026-07-19, decisión de Camilo):** el harness (subagentes Claude/Codex) se usa
+SOLO para calibrar — golden evals, muestras chicas, adjudicación puntual. TODO lo masivo
+(capa 1 Y capa 2 de revisión) va por API con Batch; la capa 2 usa un modelo DISTINTO y más
+fuerte que la capa 1 (hoy: nano clasifica, mini revisa). Motivo vivido dos veces: las
+oleadas del harness chocan con los límites de sesión del plan a mitad de corrida.
+
 Para corridas de miles, el canal es la Batch API (OpenAI hoy; el runner es
 `gtm-classify-b2b/openai_batch.py`, modelo vía env `OPENAI_BATCH_MODEL`). Reglas fijas:
 

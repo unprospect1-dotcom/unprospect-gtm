@@ -25,10 +25,8 @@ HERE = os.path.dirname(__file__)
 DDL_PATH = os.path.join(HERE, "..", "supabase", "migrations",
                         "012_canonical_company_contact.sql")
 
-# Expresión de normalización de dominio inline (misma lógica que norm_domain()).
-ND = ("lower(split_part(split_part("
-      "regexp_replace(regexp_replace(trim({c}),'^https?://',''),'^www\\.',''),"
-      "'/',1),':',1))")
+# Usa la función norm_domain() del schema (valida estructura y descarta basura).
+ND = "norm_domain({c})"
 
 
 def sql(query):

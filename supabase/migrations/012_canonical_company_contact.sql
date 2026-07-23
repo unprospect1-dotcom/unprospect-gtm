@@ -14,15 +14,23 @@
 -- ────────────────────────────────────────────────────────────────────────────
 create or replace function norm_domain(d text) returns text
 language sql immutable as $$
-  select nullif(
-    split_part(
+  -- minúsculas, sin esquema/www/path/puerto; devuelve NULL si no es un dominio válido
+  -- (descarta emails, '..', 'wa.me+...', y otras basuras que venían en la fuente).
+  select case
+    when x ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$' then x
+    else null
+  end
+  from (
+    select nullif(
       split_part(
-        regexp_replace(
-          regexp_replace(lower(trim(coalesce(d, ''))), '^https?://', ''),
-          '^www\.', ''),
-        '/', 1),
-      ':', 1),
-    '')
+        split_part(
+          regexp_replace(
+            regexp_replace(lower(trim(coalesce(d, ''))), '^https?://', ''),
+            '^www\.', ''),
+          '/', 1),
+        ':', 1),
+      '') as x
+  ) t
 $$;
 
 -- ────────────────────────────────────────────────────────────────────────────

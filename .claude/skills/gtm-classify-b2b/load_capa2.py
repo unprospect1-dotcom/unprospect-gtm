@@ -86,7 +86,9 @@ def main():
             status, method = "accepted", "stronger_model"; stronger += 1
         else:
             status, method = "needs_review", "disagreement"; disagree += 1
-        # el fallo del modelo fuerte gana la etiqueta (excepto cuando queda en review)
+        # el fallo del modelo fuerte gana la etiqueta (excepto cuando queda en review).
+        # decision_method ya codifica el acuerdo (consensus/stronger_model/disagreement);
+        # consensus_fields guarda la etiqueta de capa 1 para auditar el cambio.
         rows.append({
             "domain": dom,
             "business_model": vlabel,
@@ -96,9 +98,8 @@ def main():
             "primary_customer": v.get("primary_customer"),
             "confidence": norm_conf(v.get("confidence")),
             "verifier_model": args.verifier_model,
-            "verify_label": vlabel,
-            "verify_agree": agree,
             "decision_method": method,
+            "consensus_fields": [f"layer1:{l1label}", f"verify:{vlabel}", f"agree:{agree}"],
             "profile_status": status,
             "needs_review": status == "needs_review",
             "profiled_at": datetime.now(timezone.utc).isoformat(),

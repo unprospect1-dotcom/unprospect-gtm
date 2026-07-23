@@ -1,8 +1,25 @@
-# Supabase — diagnóstico del "desmadre" y plan de centralización
+# Supabase — centralización (HECHA 2026-07-23) + diagnóstico del "desmadre"
 
-Fecha: 2026-07-20. Motivo: el modelo se confundió sobre dónde están las firmografías
-(buscó en `companies` cuando el grueso vive en `list_companies.meta`). Este doc mapea lo
-que HAY y propone la estructura canónica. **Trabajo pendiente para una sesión dedicada.**
+Fecha del diagnóstico: 2026-07-20. Motivo: el modelo se confundió sobre dónde están las
+firmografías (buscó en `companies` cuando el grueso vive en `list_companies.meta`).
+
+> **✅ ESTADO 2026-07-23 — CENTRALIZADO.** Ya existen las tablas canónicas `company`
+> (26,844 empresas, 1 fila por dominio normalizado) y `contact` (5,186 personas ligadas
+> por dominio). DDL en `supabase/migrations/012_canonical_company_contact.sql`; ETL
+> idempotente y re-ejecutable en `scripts/centralize_supabase.py` (corre server-side vía
+> Management API, no mueve las ~70k filas por red). Las tablas crudas quedan como STAGING.
+> **Regla nueva: firmografía se consulta SOLO en `company`/`contact` y las vistas.**
+>
+> Consulta rápida de cobertura: `select * from v_company_coverage;`
+> Empresas listas para outbound: `select * from v_outbound_ready;`
+>
+> **Empleados ligados a LinkedIn (lo que preguntó Camilo), fácil de leer:**
+> - `company.employees_on_linkedin > 0` → **11,899** empresas con headcount visto en LinkedIn.
+> - `company.has_linkedin = true` → **10,512** empresas con página de LinkedIn.
+> - `company.linkedin_contacts > 0` → **3,039** empresas con personas nuestras que tienen LinkedIn.
+> - Cruce accionable (headcount LinkedIn **y** B2B fit high/medium) → **7,131** empresas.
+
+Lo de abajo es el diagnóstico original que motivó la centralización (se conserva como registro).
 
 ## Lo que hay hoy (dos universos paralelos que NO están unidos)
 
@@ -59,13 +76,19 @@ Reglas: `company` es la única fuente de verdad de firmografía; se construye co
 declarada), (4) re-liga `contacts` por dominio. Las tablas crudas se conservan como staging;
 nadie consulta firmografía fuera de `company`.
 
-## Pasos de la sesión de centralización (orden)
+## Pasos de la centralización — estado
 
-1. Función de normalización de dominio (una sola, compartida) + auditar colisiones.
-2. Migración: tabla `company` canónica + `contact` con FK por dominio.
-3. ETL idempotente meta→columnas y merge por prioridad de fuente (aiark/ocean para
-   firmografía; parallel para industry dura; crawl+clasificación para business_model).
-4. Re-ligar los 5,279 contactos por dominio; medir cuántos B2B fit ya tienen contacto.
-5. Vista `v_outbound_ready` = B2B fit + firmografía mínima + ≥1 contacto con email válido.
-6. Actualizar skills/scripts para leer SOLO de `company`/`contact`/vistas, no de las crudas.
-7. Deprecar el acceso directo a `companies`/`list_companies` en la capa de consulta.
+1. ✅ Función `norm_domain()` (una sola, compartida) — migración 012. Colisiones auditadas
+   (list_companies 31,000 filas → 22,008 dominios únicos; universo unificado 26,844).
+2. ✅ Tablas `company` canónica + `contact` con FK por dominio — migración 012.
+3. ✅ ETL idempotente meta→columnas y merge por prioridad de fuente (aiark/ocean para
+   firmografía; parallel para employee_count/linkedin; crawl+clasificación para
+   business_model/outbound_fit) — `scripts/centralize_supabase.py`.
+4. ✅ 5,186 de 5,279 contactos religados por dominio (93 sin company_id ni email_domain
+   resolvible quedan solo en staging). 3,317 empresas ya tienen ≥1 contacto.
+5. ✅ Vistas `v_company_coverage` (resumen) y `v_outbound_ready` (B2B fit + ≥1 contacto
+   con email) = **1,503** empresas.
+6. ⏳ PENDIENTE: actualizar skills/scripts para leer SOLO de `company`/`contact`/vistas.
+7. ⏳ PENDIENTE: deprecar el acceso directo a `companies`/`list_companies` en la capa de
+   consulta. El ETL es re-ejecutable, así que las crudas se pueden seguir alimentando y
+   re-centralizar con `python scripts/centralize_supabase.py --apply`.

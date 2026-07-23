@@ -90,6 +90,24 @@ select
 from agg a join best b using (nd);
 """
 
+# Paso 1b: coalescer campos que viven en meta de CUALQUIER fila duplicada del dominio
+# (no solo la representativa). Evita enmascarar linkedin/revenue de una fuente cuando la
+# fila "mejor" es de otra que no los trae (ej. Ocean no trae linkedin, AI Ark sí).
+ETL_COALESCE_META = f"""
+update company c set linkedin_url = v.li, has_linkedin = true
+  from (select {{N}} nd, max(meta->>'linkedin') li from list_companies
+        where meta->>'linkedin' is not null group by 1) v
+  where v.nd = c.domain and c.linkedin_url is null;
+update company c set revenue_range = v.rr
+  from (select {{N}} nd, max(meta->>'revenue_range') rr from list_companies
+        where meta->>'revenue_range' is not null group by 1) v
+  where v.nd = c.domain and c.revenue_range is null;
+update company c set employees_on_linkedin = v.s
+  from (select {{N}} nd, max((meta->>'staff_ocean')::int) s from list_companies
+        where meta->>'staff_ocean' ~ '^[0-9]+$' group by 1) v
+  where v.nd = c.domain and c.employees_on_linkedin is null and v.s > 0;
+""".replace("{N}", ND.format(c="domain"))
+
 # Paso 2: fusionar universo A (companies/parallel). Rellena huecos y marca fuente parallel.
 ETL_MERGE_COMPANIES = f"""
 with co as (
@@ -214,6 +232,7 @@ def run_etl():
     steps = [
         ("DDL 012 (norm_domain + company + contact + vistas)", open(DDL_PATH).read()),
         ("company <- list_companies (agregado por dominio)", ETL_COMPANY_FROM_LIST),
+        ("company coalesce meta (linkedin/revenue/staff entre duplicados)", ETL_COALESCE_META),
         ("company <- companies (parallel, rellena huecos)", ETL_MERGE_COMPANIES),
         ("company <- company_gtm_profiles (clasificación)", ETL_MERGE_PROFILES),
         ("company.crawled <- site_crawls", ETL_MARK_CRAWLED),

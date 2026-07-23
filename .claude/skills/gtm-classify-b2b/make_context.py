@@ -54,13 +54,39 @@ def fetch_texts(base, headers, domains, maxchars):
     return texts
 
 
+def fetch_descriptions(base, headers, domains):
+    """Descripción autoreportada/enriquecida de companies (industry + description).
+    Fuente distinta al clean_text; se antepone como contexto extra en capa 2."""
+    out = {}
+    for i in range(0, len(domains), CHUNK):
+        chunk = domains[i:i + CHUNK]
+        quoted = ",".join('"%s"' % d for d in chunk)
+        r = requests.get(f"{base}/rest/v1/companies",
+                         params={"select": "domain,description,description_short,industry",
+                                 "domain": f"in.({quoted})"}, headers=headers, timeout=120)
+        for row in r.json():
+            d = row.get("description") or row.get("description_short")
+            parts = []
+            if row.get("industry"):
+                parts.append(f"[Industria reportada] {row['industry']}")
+            if d:
+                parts.append(f"[Descripción autoreportada] {d[:1200]}")
+            if parts:
+                out[row["domain"]] = "\n".join(parts)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     src = ap.add_mutually_exclusive_group()
     src.add_argument("--pending", action="store_true")
     src.add_argument("--unverified", action="store_true")
     src.add_argument("--profile-pending", action="store_true")
+    src.add_argument("--review-resolvable", action="store_true",
+                     help="capa 2: needs_review resolubles por re-lectura (mixed + unclear con texto)")
     src.add_argument("--domains-file")
+    ap.add_argument("--with-description", action="store_true",
+                    help="antepone la descripción autoreportada/enriquecida de companies (donde exista)")
     ap.add_argument("--size", type=int, default=12)
     ap.add_argument("--maxchars", type=int, default=8000)
     ap.add_argument("--skip", type=int, default=0, help="salta los primeros N dominios (tramos)")
@@ -85,6 +111,12 @@ def main():
                        {"select": "domain", "profile_status": "eq.pending",
                         "source_crawl_ok": "eq.true", "source_clean_chars": "gt.500"})
         todo = sorted(x["domain"] for x in rows)
+    elif a.review_resolvable:
+        rows = get_all(f"{U}/rest/v1/company_gtm_profiles", H,
+                       {"select": "domain,business_model,source_clean_chars",
+                        "profile_status": "eq.needs_review"})
+        todo = sorted(x["domain"] for x in rows if x["business_model"] == "mixed"
+                      or (x["business_model"] == "unclear" and (x.get("source_clean_chars") or 0) >= 2000))
     else:
         crawled = {x["domain"] for x in get_all(f"{U}/rest/v1/site_crawls", H,
                    {"select": "domain", "ok": "eq.true", "clean_text": "not.is.null"})}
@@ -96,6 +128,7 @@ def main():
     todo = todo[a.skip:a.skip + a.limit if a.limit else None]
 
     texts = fetch_texts(U, H, todo, a.maxchars)
+    descs = fetch_descriptions(U, H, todo) if a.with_description else {}
     os.makedirs(a.outdir, exist_ok=True)
     if a.skip == 0:  # corrida desde cero: limpia lotes viejos para no mezclar numeraciones
         for f in os.listdir(a.outdir):
@@ -112,7 +145,10 @@ def main():
             ct = texts.get(dom, "")
             if not ct:
                 empty += 1
-            blocks.append(f"=== {dom} ===\n{ct}\n")
+            head = f"=== {dom} ==="
+            if descs.get(dom):
+                head += "\n" + descs[dom]
+            blocks.append(f"{head}\n{ct}\n")
         open(f"{a.outdir}/ctx_{nn:04d}.txt", "w", encoding="utf-8").write("\n".join(blocks))
 
     print(f"universo: {total} | este tramo: {len(todo)} (skip {a.skip}) | lotes de {a.size}: {n} "

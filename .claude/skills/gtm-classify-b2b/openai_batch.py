@@ -198,10 +198,13 @@ def cmd_drain(a):
     sys_tok = len(system) // 4 + 200
     round_n = 0
     while True:
-        # re-entrante: si hay un batch nuestro en vuelo (p.ej. el proceso anterior murió),
-        # adóptalo primero — evita duplicar lotes y chocar con el límite de encolados
-        active = [b for b in requests.get(f"{API}/batches?limit=10", headers=H, timeout=60)
-                  .json().get("data", []) if b["status"] in ("validating", "in_progress", "finalizing")]
+        # re-entrante: si hay un batch DE ESTE outdir en vuelo (proceso anterior murió),
+        # adóptalo primero. Filtra por metadata.outdir para no robar batches de otra corrida.
+        tag = os.path.basename(a.outdir.rstrip("/"))
+        active = [b for b in requests.get(f"{API}/batches?limit=20", headers=H, timeout=60)
+                  .json().get("data", [])
+                  if b["status"] in ("validating", "in_progress", "finalizing")
+                  and (b.get("metadata") or {}).get("outdir") == tag]
         for st in active:
             print(f"adoptando batch en vuelo {st['id']} ({st['status']})", flush=True)
             while st["status"] not in ("completed", "failed", "cancelled", "expired"):
@@ -240,7 +243,7 @@ def cmd_drain(a):
         up.raise_for_status()
         b = requests.post(f"{API}/batches", headers=H, timeout=60, json={
             "input_file_id": up.json()["id"], "endpoint": "/v1/chat/completions",
-            "completion_window": "24h"})
+            "completion_window": "24h", "metadata": {"outdir": tag}})
         if b.status_code >= 400:
             print(f"ronda {round_n}: submit {b.status_code} {b.text[:150]} — espero 180s", flush=True)
             time.sleep(180)
@@ -260,15 +263,22 @@ def cmd_drain(a):
             continue
         ok, bad = collect_one(H, st, a.outdir)
         print(f"ronda {round_n}: collected ok {ok} | bad {bad}", flush=True)
-        try:
-            out = subprocess.run(
-                [sys.executable, os.path.join(SK, "load_profiles.py"),
-                 "--classify", os.path.join(a.outdir, "rcls_*.jsonl"),
-                 "--model", f"{MODEL.replace('.','').replace('-','')}-b12"],
-                capture_output=True, text=True, timeout=600)
-            print(f"ronda {round_n}: load -> {(out.stdout or out.stderr).strip().splitlines()[-1]}", flush=True)
-        except Exception as e:
-            print(f"ronda {round_n}: load ERROR {e} (rcls quedan en disco)", flush=True)
+        model_tag = f"{MODEL.replace('.','').replace('-','')}-b12"
+        if a.loader == "capa2":
+            cmd = [sys.executable, os.path.join(SK, "load_capa2.py"),
+                   "--verify", os.path.join(a.outdir, "rcls_*.jsonl"),
+                   "--verifier-model", model_tag]
+        elif a.loader == "none":
+            cmd = None
+        else:
+            cmd = [sys.executable, os.path.join(SK, "load_profiles.py"),
+                   "--classify", os.path.join(a.outdir, "rcls_*.jsonl"), "--model", model_tag]
+        if cmd:
+            try:
+                out = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+                print(f"ronda {round_n}: load -> {(out.stdout or out.stderr).strip().splitlines()[-1]}", flush=True)
+            except Exception as e:
+                print(f"ronda {round_n}: load ERROR {e} (rcls quedan en disco)", flush=True)
 
 
 def main():
@@ -277,6 +287,8 @@ def main():
     ap.add_argument("--outdir", default=os.path.join(SK, "batches_prof"))
     ap.add_argument("--budget", type=int, default=1_800_000,
                     help="tokens encolados por mini-batch (límite org: 2M para nano)")
+    ap.add_argument("--loader", choices=["profiles", "capa2", "none"], default="profiles",
+                    help="qué loader corre por ronda: profiles (capa 1), capa2 (verificación), none")
     a = ap.parse_args()
     {"make": cmd_make, "submit": cmd_submit, "status": cmd_status,
      "collect": cmd_collect, "drain": cmd_drain}[a.cmd](a)

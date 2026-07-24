@@ -19,6 +19,17 @@ firmografías (buscó en `companies` cuando el grueso vive en `list_companies.me
 > - `company.linkedin_contacts > 0` → **3,039** empresas con personas nuestras que tienen LinkedIn.
 > - Cruce accionable (headcount LinkedIn **y** B2B fit high/medium) → **7,131** empresas.
 
+### Reglas de datos (semántica que NO se debe romper)
+- **`employees_on_linkedin` / `employee_count`: 0 NUNCA es válido.** Una empresa no tiene 0
+  empleados; un 0 = **sin dato = NULL**. El ETL fuerza `nullif(...,0)`. Al mostrar en tablas,
+  usar **"s/d"** para NULL (no "0"), para no confundir "sin dato" con un cero real.
+- **De dónde viene el hueco de headcount:** AI Ark SIEMPRE trae `staff.total` (0 empresas de
+  AI Ark sin dato); **Ocean casi nunca lo trae** (8,531 empresas Ocean sin headcount). El
+  cierre del hueco (~13,173 sin dato) es enriquecimiento por AI Ark.
+- **`sales_bucket='0-sin-señal'` es distinto:** ahí el 0 SÍ es un valor real de GetLeads
+  (contó 0 contactos de ventas), aunque puede ser falso negativo por cobertura MX débil (~6%)
+  o títulos en español que no mapean a su taxonomía.
+
 Lo de abajo es el diagnóstico original que motivó la centralización (se conserva como registro).
 
 ## Lo que hay hoy (dos universos paralelos que NO están unidos)

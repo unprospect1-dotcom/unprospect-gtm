@@ -55,7 +55,7 @@ with lc as (
 ),
 agg as (
   select nd,
-    max(staff_linkedin)   as employees_on_linkedin,
+    nullif(max(staff_linkedin), 0) as employees_on_linkedin,  -- 0 nunca es válido = sin dato
     max(sales_count)      as sales_count,
     max(marketing_count)  as marketing_count,
     array_remove(array_agg(distinct niche), null)  as niches,
@@ -121,7 +121,7 @@ insert into company (
   size_bucket, industry, hq_country, hq_state, hq_city, sources, created_at)
 select
   co.nd, co.name, co.website, coalesce(co.description, co.description_short),
-  co.linkedin_url, (co.linkedin_url is not null), co.employee_count,
+  co.linkedin_url, (co.linkedin_url is not null), nullif(co.employee_count, 0),
   co.size_bucket, co.industry, co.hq_country, co.hq_state,
   co.hq_city, array['parallel'], co.created_at
 from co

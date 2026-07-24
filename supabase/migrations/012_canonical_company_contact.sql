@@ -92,7 +92,7 @@ create index if not exists company_is_b2b_idx            on company (is_b2b);
 
 comment on table company is
   'Fuente de verdad canónica de empresa (1 fila por dominio normalizado). Construida por scripts/centralize_supabase.py desde companies + list_companies + company_gtm_profiles. NO consultar firmografía fuera de aquí.';
-comment on column company.employees_on_linkedin is 'Headcount visto en LinkedIn (staff_linkedin de list_companies). Puede ser ruidoso — validar vs GetLeads.';
+comment on column company.employees_on_linkedin is 'Headcount visto en LinkedIn (staff_linkedin de list_companies). REGLA: 0 NO es válido — una empresa no tiene 0 empleados; un 0 = sin dato = NULL (típico hueco de Ocean; AI Ark sí lo trae). Puede ser ruidoso — validar vs GetLeads.';
 comment on column company.linkedin_contacts is '# de personas nuestras (tabla contact) con linkedin_url en esta empresa.';
 
 -- ────────────────────────────────────────────────────────────────────────────

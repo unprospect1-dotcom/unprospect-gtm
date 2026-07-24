@@ -174,6 +174,13 @@ from (select distinct {ND.format(c='domain')} as nd from site_crawls where ok) s
 where s.nd = c.domain and c.crawled is not true;
 """
 
+# Paso 3c: excluir empresas confirmadas NO-B2B (decisión de Camilo 2026-07-24).
+# b2c y noncommercial no son prospectos → fuera del canónico. unclear/sin-clasificar
+# se conservan (no están confirmadas). Se corre ANTES de contact para no ligarles gente.
+ETL_EXCLUDE_NON_B2B = """
+delete from company where business_model in ('b2c', 'noncommercial');
+"""
+
 # ── ETL: llenado de `contact`, religado por dominio ──────────────────────────
 ETL_CONTACTS = f"""
 insert into contact (company_domain, full_name, first_name, last_name, title,
@@ -236,6 +243,7 @@ def run_etl():
         ("company <- companies (parallel, rellena huecos)", ETL_MERGE_COMPANIES),
         ("company <- company_gtm_profiles (clasificación)", ETL_MERGE_PROFILES),
         ("company.crawled <- site_crawls", ETL_MARK_CRAWLED),
+        ("excluir NO-B2B (b2c/noncommercial)", ETL_EXCLUDE_NON_B2B),
         ("contact <- contacts (religado por dominio)", ETL_CONTACTS),
         ("company back-fill señales de contacto", ETL_BACKFILL_CONTACT_SIGNALS),
     ]
